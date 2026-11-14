@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this tool or its results, please cite it as below."
+title: "Production Line Bottleneck Finder"
+authors:
+  - family-names: Golchin
+    given-names: Omid
+version: 2.0.0
+date-released: 2026-11-14
+license: MIT
+abstract: >-
+  A browser tool that finds a serial production line's bottleneck three
+  ways: by simulating the line period by period and scoring which
+  station's capacity binds, by checking the result against Little's Law
+  and Kingman's heavy-traffic approximation, and by reading a process
+  log with the active-period method. It prices every single change
+  (capacity or buffer, station by station) with paired simulation runs,
+  and compares push, drum-buffer-rope and CONWIP release at matched
+  output. The underlying discrete-period simulator, after the dice game
+  in Goldratt and Cox's The Goal, also carries the studies in the
+  research notes, including a check of whether large language models
+  can find a bottleneck directly, by writing a simulation, and from a
+  process log.
+keywords:
+  - theory of constraints
+  - bottleneck detection
+  - drum-buffer-rope
+  - CONWIP
+  - Little's Law
+  - Kingman approximation
+  - active period method
+  - simulation

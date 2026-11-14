@@ -1,0 +1,566 @@
+{
+ "analyze": [
+  {
+   "name": "fixed_conwip",
+   "opts": {
+    "periods": 200,
+    "reps": 6,
+    "seed": 99,
+    "warmup": 40
+   },
+   "tool": {
+    "release": {
+     "mode": "conwip",
+     "wip": 10
+    },
+    "stations": [
+     {
+      "buffer": null,
+      "cv": 0,
+      "die": false,
+      "mean": 5,
+      "name": "A"
+     },
+     {
+      "buffer": 6,
+      "cv": 0,
+      "die": false,
+      "mean": 3,
+      "name": "B"
+     },
+     {
+      "buffer": 6,
+      "cv": 0,
+      "die": false,
+      "mean": 4,
+      "name": "C"
+     }
+    ]
+   }
+  },
+  {
+   "name": "dice_push",
+   "opts": {
+    "periods": 200,
+    "reps": 6,
+    "seed": 7,
+    "warmup": 40
+   },
+   "tool": {
+    "release": {
+     "mode": "push",
+     "rate": 3
+    },
+    "stations": [
+     {
+      "buffer": null,
+      "cv": 0.49,
+      "die": true,
+      "mean": 3.5,
+      "name": "D1"
+     },
+     {
+      "buffer": 20,
+      "cv": 0.49,
+      "die": true,
+      "mean": 3.5,
+      "name": "D2"
+     },
+     {
+      "buffer": 20,
+      "cv": 0.49,
+      "die": true,
+      "mean": 3.5,
+      "name": "D3"
+     },
+     {
+      "buffer": 20,
+      "cv": 0.49,
+      "die": true,
+      "mean": 3.5,
+      "name": "D4"
+     }
+    ]
+   }
+  },
+  {
+   "name": "mixed_dbr",
+   "opts": {
+    "periods": 200,
+    "reps": 6,
+    "seed": 1234,
+    "warmup": 40
+   },
+   "tool": {
+    "release": {
+     "mode": "dbr",
+     "stock": 6
+    },
+    "stations": [
+     {
+      "buffer": null,
+      "cv": 0,
+      "die": false,
+      "mean": 5,
+      "name": "Saw"
+     },
+     {
+      "buffer": 8,
+      "cv": 0.49,
+      "die": true,
+      "mean": 3.5,
+      "name": "Dice"
+     },
+     {
+      "buffer": 8,
+      "cv": 0,
+      "die": false,
+      "mean": 2.5,
+      "name": "Press"
+     },
+     {
+      "buffer": 8,
+      "cv": 0,
+      "die": false,
+      "mean": 4,
+      "name": "Pack"
+     }
+    ]
+   }
+  }
+ ],
+ "data_verdicts": [
+  {
+   "log": {
+    "active_share": [
+     1,
+     0.9,
+     0
+    ],
+    "bottleneck_share": [
+     0.6,
+     0.4,
+     0
+    ]
+   },
+   "name": "never_active"
+  },
+  {
+   "log": {
+    "active_share": [
+     1,
+     0.8,
+     0.9
+    ],
+    "bottleneck_share": [
+     0.7,
+     0.2,
+     0.1
+    ]
+   },
+   "name": "dominant"
+  },
+  {
+   "log": {
+    "active_share": [
+     0.9,
+     0.95,
+     0.8
+    ],
+    "bottleneck_share": [
+     0.42,
+     0.38,
+     0.2
+    ]
+   },
+   "name": "wandering"
+  },
+  {
+   "log": {
+    "active_share": [
+     0.9,
+     0.85,
+     0.8,
+     0.95
+    ],
+    "bottleneck_share": [
+     0.28,
+     0.25,
+     0.24,
+     0.23
+    ]
+   },
+   "name": "wide"
+  }
+ ],
+ "logs": [
+  {
+   "name": "planted_states",
+   "text": "period,Saw,Mill,Oven,Pack\n1,busy,busy,busy,busy\n2,busy,busy,busy,starved\n3,blocked,busy,busy,busy\n4,busy,busy,busy,busy\n5,busy,blocked,busy,starved\n6,busy,busy,busy,busy\n7,blocked,busy,busy,busy\n8,busy,busy,busy,starved\n9,busy,blocked,busy,busy\n10,busy,busy,busy,busy\n11,blocked,busy,busy,starved\n12,busy,busy,busy,busy\n13,busy,blocked,busy,busy\n14,busy,busy,busy,starved\n15,blocked,busy,busy,busy\n16,busy,busy,busy,busy\n17,busy,blocked,busy,starved\n18,busy,busy,busy,busy\n19,blocked,busy,busy,busy\n20,busy,busy,busy,starved\n21,busy,blocked,busy,busy\n22,busy,busy,busy,busy\n23,blocked,busy,busy,starved\n24,busy,busy,busy,busy\n25,busy,blocked,busy,busy\n26,busy,busy,busy,starved\n27,blocked,busy,busy,busy\n28,busy,busy,busy,busy\n29,busy,blocked,busy,starved\n30,busy,busy,busy,busy"
+  },
+  {
+   "name": "outputs_with_zeros",
+   "text": "Cut,Weld,Paint\n4,3,2\n5,0,3\n3,4,2\n6,3,0\n4,4,3\n5,3,2\n4,0,3\n6,4,2\n3,3,3\n5,4,2\n4,3,0\n6,3,3\n5,4,2\n4,3,3\n3,0,2\n6,4,3\n5,3,2\n4,4,0\n5,3,3\n6,4,2"
+  },
+  {
+   "name": "headerless_states",
+   "text": "busy,idle,busy\nbusy,busy,busy\nidle,busy,busy\nbusy,busy,idle\nbusy,idle,busy\nbusy,busy,busy\nidle,busy,idle\nbusy,busy,busy\nbusy,idle,busy\nbusy,busy,busy"
+  }
+ ],
+ "verdicts": [
+  {
+   "name": "zero",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0,
+    "best_station": 0,
+    "blocked": [
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.5,
+     0.3,
+     0.2
+    ],
+    "means": [
+     4,
+     0,
+     5
+    ],
+    "names": [
+     "A",
+     "B",
+     "C"
+    ],
+    "plan": null,
+    "push_rate": 3,
+    "release_mode": "push",
+    "th": 0
+   }
+  },
+  {
+   "name": "release",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.2,
+    "best_station": 1,
+    "blocked": [
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.3,
+     0.5,
+     0.2
+    ],
+    "means": [
+     4.2,
+     3.8,
+     4.5
+    ],
+    "names": [
+     "A",
+     "B",
+     "C"
+    ],
+    "plan": null,
+    "push_rate": 7,
+    "release_mode": "push",
+    "th": 3.4
+   }
+  },
+  {
+   "name": "release_limited",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.3,
+    "best_station": 1,
+    "blocked": [
+     0,
+     0,
+     0
+    ],
+    "capability": 3.4,
+    "limiting": [
+     0.2,
+     0.6,
+     0.2
+    ],
+    "means": [
+     5,
+     3.6,
+     4.4
+    ],
+    "names": [
+     "A",
+     "B",
+     "C"
+    ],
+    "plan": null,
+    "push_rate": 3,
+    "release_mode": "push",
+    "th": 2.95
+   }
+  },
+  {
+   "name": "plan",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.3,
+    "best_station": 1,
+    "blocked": [
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.2,
+     0.6,
+     0.2
+    ],
+    "means": [
+     6,
+     3.6,
+     4.4
+    ],
+    "names": [
+     "A",
+     "B",
+     "C"
+    ],
+    "plan": 3.8,
+    "push_rate": null,
+    "release_mode": "dbr",
+    "th": 3.35
+   }
+  },
+  {
+   "name": "buffer_good",
+   "summary": {
+    "best_kind": "buffer",
+    "best_gain": 1.57,
+    "best_station": 1,
+    "blocked": [
+     0.9,
+     0.1,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.2,
+     0.5,
+     0.2,
+     0.1
+    ],
+    "means": [
+     5,
+     3.6,
+     5,
+     5.4
+    ],
+    "names": [
+     "Saw",
+     "Mill",
+     "Drill",
+     "Pack"
+    ],
+    "plan": null,
+    "push_rate": null,
+    "release_mode": "conwip",
+    "th": 1.85
+   }
+  },
+  {
+   "name": "buffer_warn",
+   "summary": {
+    "best_kind": "buffer",
+    "best_gain": 0.02,
+    "best_station": 1,
+    "blocked": [
+     0.9,
+     0.1,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.2,
+     0.5,
+     0.2,
+     0.1
+    ],
+    "means": [
+     5,
+     3.6,
+     5,
+     5.4
+    ],
+    "names": [
+     "Saw",
+     "Mill",
+     "Drill",
+     "Pack"
+    ],
+    "plan": null,
+    "push_rate": null,
+    "release_mode": "conwip",
+    "th": 3.0
+   }
+  },
+  {
+   "name": "balanced",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.3,
+    "best_station": 0,
+    "blocked": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.21,
+     0.19,
+     0.2,
+     0.2,
+     0.19
+    ],
+    "means": [
+     3.5,
+     3.5,
+     3.5,
+     3.5,
+     3.5
+    ],
+    "names": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "plan": null,
+    "push_rate": 4,
+    "release_mode": "push",
+    "th": 3.27
+   }
+  },
+  {
+   "name": "wandering",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.4,
+    "best_station": 1,
+    "blocked": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.1,
+     0.42,
+     0.34,
+     0.14
+    ],
+    "means": [
+     5.5,
+     3.4,
+     3.55,
+     5
+    ],
+    "names": [
+     "Saw",
+     "Mill",
+     "Lathe",
+     "Pack"
+    ],
+    "plan": null,
+    "push_rate": null,
+    "release_mode": "conwip",
+    "th": 3.3
+   }
+  },
+  {
+   "name": "small_gains",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.02,
+    "best_station": 1,
+    "blocked": [
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.05,
+     0.9,
+     0.05
+    ],
+    "means": [
+     5,
+     3,
+     5
+    ],
+    "names": [
+     "A",
+     "B",
+     "C"
+    ],
+    "plan": null,
+    "push_rate": null,
+    "release_mode": "dbr",
+    "th": 2.9
+   }
+  },
+  {
+   "name": "clear",
+   "summary": {
+    "best_kind": "capacity",
+    "best_gain": 0.39,
+    "best_station": 2,
+    "blocked": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "capability": null,
+    "limiting": [
+     0.05,
+     0.1,
+     0.8,
+     0.05
+    ],
+    "means": [
+     5.5,
+     4.6,
+     3.4,
+     4.8
+    ],
+    "names": [
+     "Cut",
+     "Weld",
+     "Paint",
+     "Assemble"
+    ],
+    "plan": null,
+    "push_rate": null,
+    "release_mode": "dbr",
+    "th": 3.38
+   }
+  }
+ ]
+}

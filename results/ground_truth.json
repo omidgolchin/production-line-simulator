@@ -1,0 +1,194 @@
+{
+ "C01": {
+  "bottleneck": "none",
+  "bottleneck_mean_capacity": null,
+  "throughput": 3.2886480000000002,
+  "throughput_ci": [
+   3.283627369422371,
+   3.2936686305776295
+  ],
+  "stations": [
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)"
+  ]
+ },
+ "C02": {
+  "bottleneck": 3,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.50218,
+  "throughput_ci": [
+   2.4978776566534027,
+   2.5064823433465975
+  ],
+  "stations": [
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "uniform 1-4 (mean 2.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)"
+  ]
+ },
+ "C03": {
+  "bottleneck": 1,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.497616,
+  "throughput_ci": [
+   2.4930598931006878,
+   2.502172106899312
+  ],
+  "stations": [
+   "uniform 1-4 (mean 2.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)"
+  ]
+ },
+ "C04": {
+  "bottleneck": 5,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.501376,
+  "throughput_ci": [
+   2.497190734884766,
+   2.505561265115234
+  ],
+  "stations": [
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "uniform 1-4 (mean 2.5)"
+  ]
+ },
+ "C05": {
+  "bottleneck": 2,
+  "bottleneck_mean_capacity": 2.0,
+  "throughput": 2.0,
+  "throughput_ci": [
+   2.0,
+   2.0
+  ],
+  "stations": [
+   "fixed 4",
+   "fixed 2",
+   "fixed 4",
+   "fixed 4"
+  ]
+ },
+ "C06": {
+  "bottleneck": 4,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.502136,
+  "throughput_ci": [
+   2.497858680484403,
+   2.5064133195155973
+  ],
+  "stations": [
+   "uniform 2-7 (mean 4.5)",
+   "uniform 2-7 (mean 4.5)",
+   "uniform 2-7 (mean 4.5)",
+   "uniform 1-4 (mean 2.5)",
+   "uniform 2-7 (mean 4.5)",
+   "uniform 2-7 (mean 4.5)"
+  ]
+ },
+ "C07": {
+  "bottleneck": 2,
+  "bottleneck_mean_capacity": 3.0,
+  "throughput": 2.999828,
+  "throughput_ci": [
+   2.9975989764425437,
+   3.002057023557456
+  ],
+  "stations": [
+   "normal mean 4, sd 0.5, rounded, min 0",
+   "normal mean 3, sd 0.5, rounded, min 0",
+   "normal mean 4, sd 0.5, rounded, min 0",
+   "normal mean 4, sd 0.5, rounded, min 0",
+   "normal mean 4, sd 0.5, rounded, min 0"
+  ]
+ },
+ "C08": {
+  "bottleneck": 3,
+  "bottleneck_mean_capacity": 3.0,
+  "throughput": 3.0,
+  "throughput_ci": [
+   3.0,
+   3.0
+  ],
+  "stations": [
+   "fixed 5",
+   "fixed 4",
+   "fixed 3",
+   "fixed 4",
+   "fixed 5"
+  ]
+ },
+ "C09": {
+  "bottleneck": 2,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.4963960000000003,
+  "throughput_ci": [
+   2.492062140240762,
+   2.5007298597592387
+  ],
+  "stations": [
+   "die roll (uniform 1-6, mean 3.5)",
+   "uniform 1-4 (mean 2.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "uniform 1-5 (mean 3)",
+   "die roll (uniform 1-6, mean 3.5)"
+  ]
+ },
+ "C10": {
+  "bottleneck": 3,
+  "bottleneck_mean_capacity": 1.5,
+  "throughput": 1.499584,
+  "throughput_ci": [
+   1.4976106940242588,
+   1.5015573059757412
+  ],
+  "stations": [
+   "die roll (uniform 1-6, mean 3.5)",
+   "die roll (uniform 1-6, mean 3.5)",
+   "uniform 1-2 (mean 1.5)"
+  ]
+ },
+ "C11": {
+  "bottleneck": 6,
+  "bottleneck_mean_capacity": 2.5,
+  "throughput": 2.5004,
+  "throughput_ci": [
+   2.498460093441144,
+   2.502339906558856
+  ],
+  "stations": [
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 2-3 (mean 2.5)",
+   "uniform 3-4 (mean 3.5)"
+  ]
+ },
+ "C12": {
+  "bottleneck": "none",
+  "bottleneck_mean_capacity": null,
+  "throughput": 3.439296,
+  "throughput_ci": [
+   3.437824412996066,
+   3.4407675870039345
+  ],
+  "stations": [
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)",
+   "uniform 3-4 (mean 3.5)"
+  ]
+ }
+}

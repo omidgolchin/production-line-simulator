@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+outputs/sandbox_tmp/
+outputs/dry_run.jsonl
+*.egg-info/

@@ -1,0 +1,119 @@
+# Frozen before the main runs (see FREEZE_MANIFEST.txt and PLAN.md).
+# Anything that changes the numbers changes this file and the plan first.
+
+experiments:
+  horizon: 250            # periods per replication
+  warmup: 50              # periods excluded from the measurement window
+  replications: 48        # paired seeds, shared by every arm
+  seed_base: 20261113
+  # Bottleneck line used by E3/E4: station 3 (index 2) uniform 1-4
+  # (mean 2.5), the rest dice (mean 3.5).
+  arms:
+    e1_fixed:                       # balanced, no variability
+      stations: [{kind: fixed, value: 4}, {kind: fixed, value: 4}, {kind: fixed, value: 4}, {kind: fixed, value: 4}, {kind: fixed, value: 4}]
+      release: {mode: infinite}
+    e1_die:                         # balanced, dice (the book's game)
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+      release: {mode: infinite}
+    e1_uni34:                       # balanced, low variability, mean 3.5
+      stations: [{kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}]
+      release: {mode: infinite}
+    e2_cap10:
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+      buffer_limits: [10, 10, 10, 10]
+      release: {mode: infinite}
+    e2_cap4:
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+      buffer_limits: [4, 4, 4, 4]
+      release: {mode: infinite}
+    e2_cap2:
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+      buffer_limits: [2, 2, 2, 2]
+      release: {mode: infinite}
+    e3_base:
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}]
+      release: {mode: infinite}
+    e3_bn_up:                       # +1 mean capacity at the bottleneck
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 2, hi: 5}, {kind: die}, {kind: die}]
+      release: {mode: infinite}
+    e3_s1_up:                       # +1 mean capacity at station 1 (not the bottleneck)
+      stations: [{kind: uniform, lo: 2, hi: 7}, {kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}]
+      release: {mode: infinite}
+    e4_push:                        # bottleneck line, push release 5/period
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}]
+      release: {mode: push, rate: 5}
+    e4_dbr:                         # bottleneck line, drum-buffer-rope
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}]
+      release: {mode: dbr, bottleneck: 2, time_buffer: 10}
+  groups:
+    e1: [e1_fixed, e1_die, e1_uni34]
+    e2: [e1_die, e2_cap10, e2_cap4, e2_cap2]
+    e3: [e3_base, e3_bn_up, e3_s1_up]
+    e4: [e4_push, e4_dbr]
+
+timeseries:
+  replications: 200
+  horizon: 250
+  seed_base: 20261113
+  arms: [e1_die, e4_dbr]     # balanced line vs protected bottleneck
+  plan_rate: {e1_die: 3.5, e4_dbr: 2.5}
+
+llm_check:
+  temperature: 0.7
+  max_tokens: 16000   # raised from 4000 after pilot v1: every format
+                      # failure was a reasoning model truncated at
+                      # 4000 tokens (DECISIONS.md #10)
+  seed_base: 20261113
+  modes: [direct, code, fromdata]
+  pilot_configs: [C01, C02, C05, C07, C10]
+  # Candidate pool for the pilot: six models from six families, probed
+  # for serverless access first. Selection rule (as in P11): drop any
+  # model whose code fails to run in more than half of the 5 pilot
+  # configurations, then take the three cheapest remaining models from
+  # three different families that answer in the required format.
+  candidate_models:
+    - openai/gpt-oss-120b
+    - zai-org/GLM-5.3-Flash
+    - MiniMaxAI/MiniMax-M3.1-Flash
+    - Qwen/Qwen3.5-9B
+    - deepseek-ai/DeepSeek-V4.1-Flash
+    - mistralai/Mistral-Small-24B-Instruct-2501
+  # Selected by the pilot rule (DECISIONS.md #11): Qwen dropped (code
+  # ran in only 2/5 pilot configs), Mistral never connected; of the
+  # survivors these are the three cheapest by measured pilot cost.
+  models:
+    - openai/gpt-oss-120b
+    - MiniMaxAI/MiniMax-M3.1-Flash
+    - zai-org/GLM-5.3-Flash
+  ground_truth:
+    replications: 1000
+    horizon: 300
+    warmup: 50
+    seed_base: 20261113
+  log_periods: 50
+  log_seed: 20261113
+  configs:
+    C01:  # balanced dice line - no bottleneck
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+    C02:  # bottleneck in the middle
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}]
+    C03:  # bottleneck first
+      stations: [{kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: die}, {kind: die}, {kind: die}]
+    C04:  # bottleneck last
+      stations: [{kind: die}, {kind: die}, {kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 4}]
+    C05:  # fixed capacities, one slow station
+      stations: [{kind: fixed, value: 4}, {kind: fixed, value: 2}, {kind: fixed, value: 4}, {kind: fixed, value: 4}]
+    C06:  # six stations, uniform, station 4 slow
+      stations: [{kind: uniform, lo: 2, hi: 7}, {kind: uniform, lo: 2, hi: 7}, {kind: uniform, lo: 2, hi: 7}, {kind: uniform, lo: 1, hi: 4}, {kind: uniform, lo: 2, hi: 7}, {kind: uniform, lo: 2, hi: 7}]
+    C07:  # normal capacities, station 2 slower on average
+      stations: [{kind: normal, mu: 4, sigma: 0.5}, {kind: normal, mu: 3, sigma: 0.5}, {kind: normal, mu: 4, sigma: 0.5}, {kind: normal, mu: 4, sigma: 0.5}, {kind: normal, mu: 4, sigma: 0.5}]
+    C08:  # fixed capacities, dip in the middle
+      stations: [{kind: fixed, value: 5}, {kind: fixed, value: 4}, {kind: fixed, value: 3}, {kind: fixed, value: 4}, {kind: fixed, value: 5}]
+    C09:  # two slow stations; station 2 is the slower one
+      stations: [{kind: die}, {kind: uniform, lo: 1, hi: 4}, {kind: die}, {kind: uniform, lo: 1, hi: 5}, {kind: die}]
+    C10:  # three stations, last one very slow
+      stations: [{kind: die}, {kind: die}, {kind: uniform, lo: 1, hi: 2}]
+    C11:  # seven stations, station 6 slow
+      stations: [{kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 2, hi: 3}, {kind: uniform, lo: 3, hi: 4}]
+    C12:  # balanced low-variability line - no bottleneck
+      stations: [{kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}, {kind: uniform, lo: 3, hi: 4}]

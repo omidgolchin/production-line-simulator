@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production Line Bottleneck Finder: the bottleneck, the real output, the next dollar</title>
+<meta name="description" content="Find a production line's bottleneck, the output it can really sustain, and where the next dollar goes. Simulate your line or read the answer from a log of station states.">
+<script src="kit-theme.js"></script>
+<link rel="stylesheet" href="kit.css">
+<link rel="stylesheet" href="tool.css">
+<style>
+  /* Page-specific layout: the station editor and the live line.
+     Everything else is kit.css / tool.css, unchanged. */
+  .stn-head, .stn-row { display:grid; grid-template-columns:minmax(92px,1.15fr) .62fr 1.05fr .78fr 30px; gap:8px; align-items:start; }
+  .stn-head { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:2px 0 4px; }
+  .stn-row { padding:5px 0; border-top:1px solid var(--border); }
+  .stn-row input, .stn-row select { font:inherit; width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
+  .stn-row input.err { border-color:var(--bad); background:#fdf1f0; }
+  .stn-row input.filled { background:var(--accent-soft); border-color:var(--accent); }
+  .stn-cv { margin-top:6px; }
+  .stn-lab { display:none; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; }
+  .stn-nobuf { display:block; padding:8px 2px; color:var(--muted); font-size:13px; }
+  .stn-del { font:inherit; width:30px; height:34px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--muted); cursor:pointer; }
+  .stn-del:hover { color:var(--bad); border-color:var(--bad); }
+  .stn-actions { display:flex; align-items:center; gap:12px; margin:10px 0 4px; }
+  @media (max-width:700px) {
+    .stn-head { display:none; }
+    .stn-row { grid-template-columns:1fr 1fr 30px; }
+    .stn-name-cell { grid-column:1 / -1; }
+    .stn-lab { display:block; }
+  }
+  .live-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 16px; }
+  .live-head h2 { margin:0; }
+  .live-controls { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .live-controls select { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
+  .live-stats { color:var(--muted); font-size:14px; margin:6px 0 2px; }
+  .live-stats b { color:var(--fg); }
+  .live-line { display:flex; align-items:flex-end; gap:4px; overflow-x:auto; padding:14px 2px 6px; }
+  .lv-unit { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:86px; }
+  .lv-pile { min-height:56px; display:flex; flex-wrap:wrap-reverse; align-content:flex-start; justify-content:center; gap:2px; width:84px; }
+  .lv-dot { width:7px; height:7px; border-radius:50%; background:var(--series-2); }
+  .lv-pile-n { font-size:12px; color:var(--muted); min-height:15px; }
+  .lv-box { width:100%; text-align:center; border:2px solid var(--border); border-radius:10px; padding:8px 4px; background:var(--sunken); }
+  .lv-box.moved { border-color:var(--accent); background:var(--accent-soft); }
+  .lv-box.is-bn { border-color:var(--bad); }
+  .lv-name { font-weight:700; font-size:14px; }
+  .lv-sub { font-size:12px; color:var(--muted); }
+  .lv-arrow { align-self:center; color:var(--muted); font-size:18px; padding-bottom:26px; }
+  .live-fix { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:12px; }
+  .live-fix select { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
+</style>
+</head>
+<body>
+<main>
+  <header class="kit-header">
+    <div class="kit-header-top">
+      <p class="kit-kicker">Omid Golchin · Decision tools</p>
+      <button type="button" class="kit-theme-toggle" aria-pressed="false">◐ Theme</button>
+    </div>
+    <h1>Production Line Bottleneck Finder</h1>
+    <p class="kit-tagline">Where your line loses output, what it can really make, and where the next dollar goes. Describe the line, or paste a log from it; the line is simulated period by period, not just averaged.</p>
+  </header>
+
+  <div class="tool-modes" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" data-mode="analyze" class="active" aria-selected="true">Analyze my line</button>
+    <button type="button" role="tab" data-mode="data" aria-selected="false">Find it from data</button>
+  </div>
+
+  <!-- ================= Analyze my line ================= -->
+  <div id="view-analyze">
+    <section class="work">
+      <form class="panel" id="inputs" novalidate onsubmit="return false">
+        <div class="panel-head">
+          <h2>Your line</h2>
+          <select class="example" id="example" aria-label="Load an example">
+            <option value="">Load example…</option>
+            <option value="goal">The Goal's dice game</option>
+            <option value="plan">A plan the line cannot meet</option>
+            <option value="flood">Releasing work too fast</option>
+            <option value="slow">Released too slowly</option>
+            <option value="two">Two stations share the blame</option>
+            <option value="buffer">A buffer that is too small</option>
+            <option value="down">A station is down</option>
+          </select>
+        </div>
+        <div class="stn-head" aria-hidden="true"><span>Station</span><span>Output / period</span><span>Variability</span><span>Buffer in front</span><span></span></div>
+        <div id="stations"></div>
+        <div class="stn-actions">
+          <button type="button" class="btn small" id="add-station">+ Add a station</button>
+          <span class="hint" id="stn-count"></span>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="rel">How work is released</label>
+            <select id="rel">
+              <option value="push">Push: release on a schedule</option>
+              <option value="dbr">Drum-buffer-rope: at the bottleneck's pace</option>
+              <option value="conwip">CONWIP: cap total work in process</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rel-param" id="rel-param-label">Release rate (units per period)</label>
+            <input id="rel-param" type="number" min="0" step="1" inputmode="numeric">
+          </div>
+        </div>
+        <div class="field">
+          <label for="plan">Planned output per period <span class="opt">(optional; the result is checked against it)</span></label>
+          <input id="plan" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 3.6">
+        </div>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <div class="actions" style="margin-top:12px">
+          <button type="button" id="assistToggle">✦ Fill from my description</button>
+          <span class="footnote">Describe your line or paste a shift report; an AI model fills the form, the tool does the math.</span>
+        </div>
+        <div id="assistMount"></div>
+      </form>
+
+      <section class="panel verdict" id="verdict" aria-live="polite">
+        <p class="v-kicker" id="v-kicker">Bottleneck verdict</p>
+        <h3 class="v-title" id="v-title">…</h3>
+        <p class="v-body" id="v-body">…</p>
+        <div class="kpis" id="v-kpis"></div>
+        <div class="checks" id="v-checks"></div>
+        <div class="actions">
+          <button type="button" class="btn small" id="copy-summary">Copy summary</button>
+          <button type="button" class="btn small" id="copy-link">Copy link</button>
+          <span class="toast" id="toast"></span>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Your line, running live">
+      <div class="live-head">
+        <h2>Watch it run</h2>
+        <div class="live-controls">
+          <button type="button" class="btn small" id="lv-toggle">Pause</button>
+          <label class="hint" for="lv-speed">Speed</label>
+          <select id="lv-speed">
+            <option value="1">1 period / tick</option>
+            <option value="3" selected>3 periods / tick</option>
+            <option value="8">8 periods / tick</option>
+          </select>
+          <button type="button" class="btn small" id="lv-restart">Restart</button>
+        </div>
+      </div>
+      <p class="live-stats">Period <b id="lv-period">0</b> · Finished <b id="lv-out">0</b> · Waiting or in process <b id="lv-wip">0</b> units. Dots are units waiting in front of each station; the red frame marks the bottleneck from the verdict.</p>
+      <div class="live-line" id="live-line"></div>
+      <div class="live-fix">
+        <label for="lv-station">Try a fix at</label>
+        <select id="lv-station"></select>
+        <button type="button" class="btn small" id="lv-addcap">+ Capacity</button>
+        <button type="button" class="btn small" id="lv-addbuf">+ Buffer</button>
+        <span class="hint">The fix edits the inputs above, and the line restarts with it in place.</span>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Ranked improvement options">
+      <h2>Where the next change pays</h2>
+      <p class="sub">Expected gain in output per period for each single change, best first. Bars are paired simulation runs against the current line; whiskers are 95% ranges, so a change whose range crosses zero is not proven to help.</p>
+      <div class="svgchart" id="chart"></div>
+      <p class="caption" id="chart-cap"></p>
+    </section>
+
+    <details class="more">
+      <summary>The full numbers</summary>
+      <div class="body" id="full-numbers"></div>
+    </details>
+
+    <details class="more">
+      <summary>Release rules compared</summary>
+      <div class="body" id="release-numbers"></div>
+    </details>
+
+    <details class="more">
+      <summary>How the verdict is decided</summary>
+      <div class="body">
+        <p><strong>Bottleneck by simulation.</strong> The line is simulated period by period, many times over. In each period, a station counts as limiting when work was waiting in front of it, room was free behind it, and its own capacity that period was the binding limit. A station's limiting share is the fraction of periods it held the line back that way; ties count for nobody. This is the headline test, because the station with the lowest average is not always the station that limits a variable line.</p>
+        <p><strong>Little's law.</strong> Work in process equals throughput times cycle time (Little, 1961). The check compares the simulator's own three counters; a settled line satisfies it closely, and a line whose queues grow all run long does not, which the check reports instead of hiding.</p>
+        <p><strong>Kingman's approximation.</strong> Next to the simulated queue in front of each station, the full numbers show Kingman's heavy-traffic form: queue ≈ (arrival variance + capacity variance) / (2 × (average capacity − throughput)), with arrival variability carried station to station by Whitt's departure rule. In this batch-period model the formula runs high at moderate utilization (by roughly a third to double on the tested lines) and explodes when a station's average capacity sits within a couple of percent of throughput, where the simulated queue is the number to use; the check on the verdict panel says which case this line is.</p>
+        <p><strong>Release rules.</strong> Push releases work on a schedule, whatever the line can absorb. Drum-buffer-rope releases at the bottleneck's pace, with a protective stock held in front of it (Goldratt &amp; Cox, 1984). CONWIP releases a new unit only when one leaves, capping total work in process (Spearman, Woodruff &amp; Hopp, 1990). The comparison holds the line fixed and asks how much work in process each rule needs at the same output.</p>
+        <p><strong>From data.</strong> The second mode uses the active-period method (Roser, Nakano &amp; Tanaka, 2001): the station that has been active longest without a break is the momentary bottleneck. The experiments behind this tool, including what language models get right and wrong about such lines, are in the <a href="https://github.com/omidgolchin/production-line-simulator#research-notes">research notes</a>.</p>
+      </div>
+    </details>
+
+    <details class="more">
+      <summary>Settings: simulation size</summary>
+      <div class="body">
+        <div class="grid2">
+          <div class="field">
+            <label for="reps">Repetitions per scenario</label>
+            <select id="reps">
+              <option value="12">12 (fast)</option>
+              <option value="20" selected>20</option>
+              <option value="32">32 (slower, tighter ranges)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="periods">Periods per run</label>
+            <select id="periods">
+              <option value="200">200</option>
+              <option value="300" selected>300</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">Every number on the page comes from these runs, with the first sixth of each run discarded as warm-up. The same engine ships as a tested Python reference implementation; the two agree exactly on the cases in the test suite.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- ================= Find it from data ================= -->
+  <div id="view-data" hidden>
+    <section class="work">
+      <form class="panel" id="data-inputs" novalidate onsubmit="return false">
+        <div class="panel-head">
+          <h2>Your log</h2>
+          <select class="example" id="d-example" aria-label="Load an example log">
+            <option value="">Load example…</option>
+            <option value="planted">A kiln line with one clear bottleneck</option>
+            <option value="wandering">The bottleneck moves mid-log</option>
+            <option value="dice">A dice-game log (outputs only)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="log">One row per period, one column per station</label>
+          <textarea id="log" rows="14" spellcheck="false"></textarea>
+          <p class="hint">Cells are either states (busy, idle, starved, blocked, down) or units produced that period. A first column named "period" is ignored. Comma, tab or semicolon separated; a header row of station names is optional.</p>
+        </div>
+        <div class="field">
+          <label for="log-file">Or load a file</label>
+          <input id="log-file" type="file" accept=".csv,.tsv,.txt">
+        </div>
+        <p id="d-form-error" class="form-error" role="alert" hidden></p>
+      </form>
+
+      <section class="panel verdict" id="d-verdict" aria-live="polite">
+        <p class="v-kicker">Bottleneck from your log</p>
+        <h3 class="v-title" id="dv-title">…</h3>
+        <p class="v-body" id="dv-body">…</p>
+        <div class="kpis" id="dv-kpis"></div>
+        <div class="checks" id="dv-checks"></div>
+        <div class="actions">
+          <button type="button" class="btn small" id="d-copy-summary">Copy summary</button>
+          <button type="button" class="btn small" id="d-copy-link">Copy link</button>
+          <button type="button" class="btn small" id="use-averages">Use these averages in “Analyze my line”</button>
+          <span class="toast" id="dToast"></span>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Bottleneck share by station">
+      <h2>Bottleneck share by station</h2>
+      <p class="sub">Share of the logged periods in which each station was the momentary bottleneck, by the active-period method.</p>
+      <div class="svgchart" id="d-chart"></div>
+      <p class="caption" id="d-chart-cap"></p>
+    </section>
+
+    <details class="more">
+      <summary>Station by station</summary>
+      <div class="body" id="data-numbers"></div>
+    </details>
+
+    <details class="more">
+      <summary>How the active-period method works</summary>
+      <div class="body">
+        <p>In every period, the momentary bottleneck is the station that has been active longest without a break (Roser, Nakano &amp; Tanaka, 2001). The logic is simple: a station that is starved or blocked keeps having its run reset, while the bottleneck works on, so its unbroken run keeps growing until it is the longest. A station's bottleneck share is the fraction of periods in which it held that spot, with tied periods split evenly.</p>
+        <p>The method needs a log that shows idle time. A state log (busy, starved, blocked, down) is ideal. An output log works when stations post zeros in the periods they could not run. If every station posts output in every period, no station can be separated from the others from that log alone, and the tool says so rather than guessing.</p>
+        <p>One caution: the lowest average output does not by itself identify the bottleneck. A station can post low output because it is starved by the station in front of it. The verdict panel compares the two readings and flags it when they point at different stations.</p>
+      </div>
+    </details>
+  </div>
+
+  <footer class="kit-footer">
+    <p class="kit-siblings"><span class="kit-siblings-label">More tools:</span>
+      <a href="https://omidgolchin.github.io/bayesian-ab-lab/">A/B Test Decision Tool</a> ·
+      <a href="https://omidgolchin.github.io/queue-simulator/">Call Center Staffing Planner</a> ·
+      <a href="https://omidgolchin.github.io/experiment-hazard-simulator/">Agent Eval Planner</a> ·
+      <a href="https://omidgolchin.github.io/production-line-simulator/" aria-current="page">Production Line Bottleneck Finder</a></p>
+    <p>Built by Omid Golchin · <a href="https://github.com/omidgolchin/production-line-simulator">Code, tests and design decisions</a> · Everything runs in your browser; nothing you type is sent anywhere unless you use the AI fill with your own key.</p>
+  </footer>
+</main>
+<script src="linesim.js"></script>
+<script src="tool-common.js"></script>
+<script src="assist-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

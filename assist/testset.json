@@ -1,0 +1,689 @@
+[
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Cutting",
+     "output": 42,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Welding",
+     "output": 35,
+     "cv": 0.3,
+     "buffer": 12,
+     "die": false
+    },
+    {
+     "name": "Packing",
+     "output": 40,
+     "cv": 0.15,
+     "buffer": 8,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "plain-three-stations",
+  "text": "Our line has three stations. Cutting averages 42 units an hour and is steady. Welding does about 35 an hour, varies, and has room for 12 units in front of it. Packing runs 40 an hour, steady, with space for 8 in front."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Saw",
+     "output": 40,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Mill",
+     "output": 38,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Drill press",
+     "output": 30,
+     "cv": 0.55,
+     "buffer": 20,
+     "die": false
+    },
+    {
+     "name": "Assembly",
+     "output": 45,
+     "cv": 0.3,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "shift-rates-converted",
+  "text": "Shift report, Line 4 (8-hour shifts). Saw: 320 per shift, steady. Mill: 38 per hour. Drill press: 240 per shift, varies a lot. Assembly: 45 per hour, varies. There is room for 20 in front of the drill press."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Prep",
+     "output": 34,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Oven",
+     "output": 30,
+     "cv": null,
+     "buffer": 40,
+     "die": false
+    },
+    {
+     "name": "Glazing",
+     "output": 28,
+     "cv": 0.3,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "batch-oven",
+  "text": "The oven runs batches of 60, one batch every 2 hours. Before it, prep does 34 an hour, steady, with space for 40 in front of the oven. After it, glazing does 28 an hour and varies."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Saw",
+     "output": 6,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Lathe",
+     "output": 5,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Deburring",
+     "output": 4,
+     "cv": 0.55,
+     "buffer": 6,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "cycle-times",
+  "text": "Each part spends about 12 minutes on the lathe. Before it, the saw cuts 6 an hour, steady. After it, deburring takes about 15 minutes a part and varies a lot. Room for 6 in front of deburring."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": 4,
+   "releaseRule": "push",
+   "stations": [
+    {
+     "name": "Station 1",
+     "output": 3.5,
+     "cv": 0.49,
+     "buffer": null,
+     "die": true
+    },
+    {
+     "name": "Station 2",
+     "output": 3.5,
+     "cv": 0.49,
+     "buffer": 50,
+     "die": true
+    },
+    {
+     "name": "Station 3",
+     "output": 3.5,
+     "cv": 0.49,
+     "buffer": 50,
+     "die": true
+    },
+    {
+     "name": "Station 4",
+     "output": 3.5,
+     "cv": 0.49,
+     "buffer": 50,
+     "die": true
+    },
+    {
+     "name": "Station 5",
+     "output": 3.5,
+     "cv": 0.49,
+     "buffer": 50,
+     "die": true
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "dice-game",
+  "text": "We ran the dice game from The Goal in training: five stations in a row, each one rolls a die for its output, and we fed 4 chips a period into the first station. Fifty chips can pile up between any two stations."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": "conwip",
+   "stations": [
+    {
+     "name": "Press",
+     "output": 9,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Bend",
+     "output": 7,
+     "cv": null,
+     "buffer": 5,
+     "die": false
+    },
+    {
+     "name": "Weld",
+     "output": 8,
+     "cv": null,
+     "buffer": 5,
+     "die": false
+    }
+   ],
+   "wipCap": 24
+  },
+  "id": "conwip-cap",
+  "text": "We never let more than 24 jobs be on the floor at once; when one finishes, we release another. Stations: press 9 an hour, steady; bend 7 an hour; weld 8 an hour. There is room for 5 in front of bend and 5 in front of weld."
+ },
+ {
+  "expected": {
+   "plan": 9,
+   "releaseRate": null,
+   "releaseRule": "dbr",
+   "stations": [
+    {
+     "name": "Cutting",
+     "output": 12,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Kiln",
+     "output": 9,
+     "cv": 0.55,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Cooling",
+     "output": 11,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "dbr-and-plan",
+  "text": "Releases are paced by the kiln, our slowest step: we start work at the kiln's rate. Cutting does 12 an hour, the kiln fires 9 an hour and varies a lot, cooling does 11 an hour. The plan calls for 9 an hour."
+ },
+ {
+  "expected": {
+   "plan": 28,
+   "releaseRate": 30,
+   "releaseRule": "push",
+   "stations": [
+    {
+     "name": "Mixing",
+     "output": 34,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Filling",
+     "output": 27,
+     "cv": 0.3,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Capping",
+     "output": 31,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Labeling",
+     "output": 36,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "push-and-plan",
+  "text": "We push 30 units an hour into the line whether it is ready or not. Mixing 34 an hour, filling 27 an hour (varies), capping 31 an hour, labeling 36 an hour. We are supposed to ship 28 an hour."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Station A",
+     "output": 5,
+     "cv": 0.12,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Station B",
+     "output": 4,
+     "cv": 0.55,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Station C",
+     "output": 7,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "ranges",
+  "text": "Station A makes 4 to 6 units an hour. Station B makes 3 to 5 an hour and varies a lot. Station C is a steady 7 an hour."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Feed",
+     "output": 55,
+     "cv": 0.1,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Form",
+     "output": 48,
+     "cv": 0.22,
+     "buffer": 15,
+     "die": false
+    },
+    {
+     "name": "Trim",
+     "output": 39,
+     "cv": 0.31,
+     "buffer": 15,
+     "die": false
+    },
+    {
+     "name": "Pack",
+     "output": 52,
+     "cv": 0.18,
+     "buffer": 10,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "mes-table",
+  "text": "Export from the MES, one row per station: Feed, 55 units per hour, cv 0.10, no buffer stated. Form, 48 per hour, cv 0.22, buffer 15. Trim, 39 per hour, cv 0.31, buffer 15. Pack, 52 per hour, cv 0.18, buffer 10."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": null,
+   "wipCap": null
+  },
+  "id": "no-numbers",
+  "text": "Our bottleneck is somewhere in the middle of the line and output has been disappointing lately."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Load",
+     "output": 10,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Print",
+     "output": 8,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Unload",
+     "output": 0,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "broken-station",
+  "text": "Three stations: load 10 an hour, print 8 an hour, and unload, which is broken and currently produces nothing."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Cutting",
+     "output": 18,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Sandblasting",
+     "output": 15,
+     "cv": 0.3,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "unlimited-buffer",
+  "text": "Sandblasting can hold as many parts in front of it as we want, no limit. It does 15 an hour and varies. Before it, cutting does 18 an hour."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Saw",
+     "output": 25,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Planer",
+     "output": 22,
+     "cv": 0.3,
+     "buffer": 10,
+     "die": false
+    },
+    {
+     "name": "Router",
+     "output": 19,
+     "cv": 0.55,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Sanding",
+     "output": 24,
+     "cv": 0.15,
+     "buffer": 8,
+     "die": false
+    },
+    {
+     "name": "Finishing",
+     "output": 21,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "plant-walk",
+  "text": "Walking the floor: the saw cuts about 25 boards an hour, pretty steady. Then the planer takes it to 22 an hour with some variation and room for 10 in front. The router is all over the place, 19 an hour on average. Sanding does 24 an hour, steady, with room for 8 in front, and finishing coats 21 an hour."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Wash",
+     "output": 30,
+     "cv": 0.3,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Coating tank",
+     "output": 36,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Inspection",
+     "output": 45,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "rack-batch",
+  "text": "The coating tank finishes a rack every 20 minutes and each rack holds 12 parts. Upstream, wash does 30 parts an hour and varies. Downstream, inspection does 45 an hour, steady."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Cleaning",
+     "output": 45,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Etching",
+     "output": 40,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Testing",
+     "output": 38,
+     "cv": 0.55,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "day-rates",
+  "text": "The plant runs 10-hour days. Etching completes 400 a day, steady. Before it, cleaning completes 45 an hour. After it, testing completes 380 a day and varies a lot."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": 5,
+   "releaseRule": "push",
+   "stations": [
+    {
+     "name": "Fit",
+     "output": 6,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Torque",
+     "output": 4,
+     "cv": 0.3,
+     "buffer": 6,
+     "die": false
+    },
+    {
+     "name": "Test",
+     "output": 7,
+     "cv": null,
+     "buffer": 6,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "kits-push",
+  "text": "We release 5 kits an hour into assembly. Fit makes 6 an hour, torque makes 4 an hour and varies, test makes 7 an hour, and each station after the first has a rack for 6 kits in front of it."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Filler",
+     "output": 300,
+     "cv": 0.15,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Capper",
+     "output": 280,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Labeler",
+     "output": 250,
+     "cv": 0.55,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Packer",
+     "output": 260,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "bottling-line",
+  "text": "Day shift notes: filler 2400 bottles a shift (8 hours), capper 280 an hour, labeler 2000 a shift, packer 260 an hour. The filler is steady; the labeler varies a lot."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Molding",
+     "output": 6,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Curing",
+     "output": 5,
+     "cv": 0.1,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "time-range",
+  "text": "Before curing, molding makes 6 parts an hour. The curing station takes anywhere from 10 to 14 minutes per part."
+ },
+ {
+  "expected": {
+   "plan": null,
+   "releaseRate": null,
+   "releaseRule": null,
+   "stations": [
+    {
+     "name": "Wash",
+     "output": null,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Press",
+     "output": 50,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Dry",
+     "output": null,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    },
+    {
+     "name": "Pack",
+     "output": null,
+     "cv": null,
+     "buffer": null,
+     "die": false
+    }
+   ],
+   "wipCap": null
+  },
+  "id": "mostly-unmeasured",
+  "text": "The line is wash, then the new press, then dry, then pack. The press should do 50 an hour when it arrives. Nobody has measured wash, dry or pack."
+ }
+]
