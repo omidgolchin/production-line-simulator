@@ -11,13 +11,21 @@
 <style>
   /* Page-specific layout: the station editor and the live line.
      Everything else is kit.css / tool.css, unchanged. */
-  .stn-head, .stn-row { display:grid; grid-template-columns:minmax(92px,1.15fr) .62fr 1.05fr .78fr 30px; gap:8px; align-items:start; }
+  .stn-head, .stn-row { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(48px,.55fr) minmax(0,1.6fr) minmax(46px,.6fr) 28px; gap:8px; align-items:start; }
   .stn-head { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:2px 0 4px; }
   .stn-row { padding:5px 0; border-top:1px solid var(--border); }
   .stn-row input, .stn-row select { font:inherit; width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
   .stn-row input.err { border-color:var(--bad); background:#fdf1f0; }
   .stn-row input.filled { background:var(--accent-soft); border-color:var(--accent); }
-  .stn-cv { margin-top:6px; }
+  .stn-row input[type=number] { -moz-appearance:textfield; appearance:textfield; padding-left:6px; padding-right:6px; }
+  .stn-row input[type=number]::-webkit-inner-spin-button, .stn-row input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .stn-varcell { display:flex; gap:4px; }
+  .stn-varcell select { flex:1 1 auto; min-width:0; padding-left:5px; padding-right:2px; }
+  .stn-row .stn-cv { flex:0 0 3.6em; width:3.6em; padding:7px 5px; }
+  .stn-actions .btn { white-space:nowrap; }
+  .stn-help { margin:6px 0 10px; font-size:var(--fs-caption); color:var(--muted); }
+  .grid2 .field { margin-bottom:10px; }
+  .stn-head .tip { text-transform:none; letter-spacing:0; }
   .stn-lab { display:none; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; }
   .stn-nobuf { display:block; padding:8px 2px; color:var(--muted); font-size:13px; }
   .stn-del { font:inherit; width:30px; height:34px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--muted); cursor:pointer; }
@@ -48,6 +56,17 @@
   .lv-arrow { align-self:center; color:var(--muted); font-size:18px; padding-bottom:26px; }
   .live-fix { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:12px; }
   .live-fix select { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
+  @media (max-width:600px) {
+    .live-line { flex-direction:column; align-items:stretch; gap:2px; overflow-x:visible; }
+    .lv-unit { flex-direction:row; align-items:center; min-width:0; gap:8px; }
+    .lv-box { order:1; } .lv-pile-n { order:2; } .lv-pile { order:3; }
+    .lv-box { flex:1 1 auto; text-align:left; padding:6px 10px; }
+    .lv-pile { width:56px; min-height:0; flex:0 0 56px; justify-content:flex-start; flex-wrap:wrap; }
+    .lv-pile-n { flex:0 0 62px; min-height:0; text-align:right; }
+    .lv-arrow { align-self:flex-start; padding:0 0 0 44px; transform:none; line-height:16px; height:16px; font-size:0; }
+    .lv-arrow::before { content:"\2193"; font-size:14px; }
+  }
+
 </style>
 </head>
 <body>
@@ -61,13 +80,21 @@
     <p class="kit-tagline">Where your line loses output, what it can really make, and where the next dollar goes. Describe the line, or paste a log from it; the line is simulated period by period, not just averaged.</p>
   </header>
 
-  <div class="tool-modes" role="tablist" aria-label="Mode">
-    <button type="button" role="tab" data-mode="analyze" class="active" aria-selected="true">Analyze my line</button>
-    <button type="button" role="tab" data-mode="data" aria-selected="false">Find it from data</button>
+  <div class="tool-modes" role="tablist" aria-label="What do you want to do?">
+    <button type="button" role="tab" id="tab-analyze" data-mode="analyze" class="active" aria-selected="true">Analyze my line</button>
+    <button type="button" role="tab" id="tab-data" data-mode="data" aria-selected="false">Find it from data</button>
   </div>
 
   <!-- ================= Analyze my line ================= -->
-  <div id="view-analyze">
+  <div id="view-analyze" role="tabpanel" aria-labelledby="tab-analyze">
+    <div class="guide" aria-label="How to use this mode">
+      <ol class="steps">
+        <li><b>List your stations in order</b>, with what each makes per period on average, how much that varies, and the space in front of it.</li>
+        <li><b>Say how work enters the line</b>: on a schedule, tied to the bottleneck, or capped in total.</li>
+        <li><b>Read the verdict</b>: which station limits output, what the line can really make, and which single change pays most. <i>Watch it run</i> shows the queues form.</li>
+      </ol>
+      <p class="also"><b>Also here:</b> <i>Find it from data</i> finds the bottleneck in a log from your floor · <i>Try a fix</i> applies a change and reruns · <i>Release rules compared</i> prices push, drum-buffer-rope and CONWIP on your line.</p>
+    </div>
     <section class="work">
       <form class="panel" id="inputs" novalidate onsubmit="return false">
         <div class="panel-head">
@@ -83,30 +110,31 @@
             <option value="down">A station is down</option>
           </select>
         </div>
-        <div class="stn-head" aria-hidden="true"><span>Station</span><span>Output / period</span><span>Variability</span><span>Buffer in front</span><span></span></div>
+        <div class="stn-head"><span>Station</span><span>Output <button type="button" data-tip="mean"></button></span><span>Variability <button type="button" data-tip="cv"></button></span><span>Buffer <button type="button" data-tip="buf"></button></span><span></span></div>
         <div id="stations"></div>
         <div class="stn-actions">
           <button type="button" class="btn small" id="add-station">+ Add a station</button>
           <span class="hint" id="stn-count"></span>
         </div>
+        <p class="hint stn-help"><b>Output</b>: units a station finishes in a period when it has work, on average. <b>Variability</b>: how much that swings from period to period. <b>Buffer</b>: room for waiting units in front of a station; when it is full, the station before it has to stop.</p>
         <div class="grid2">
           <div class="field">
-            <label for="rel">How work is released</label>
+            <label for="rel">How work is released <button type="button" data-tip="release"></button></label>
             <select id="rel">
               <option value="push">Push: release on a schedule</option>
               <option value="dbr">Drum-buffer-rope: tied to the bottleneck</option>
               <option value="conwip">CONWIP: cap total work in process</option>
             </select>
-          </div>
+          <div class="hint">The rule for letting new work onto the line. Releasing faster than the bottleneck only builds queues.</div></div>
           <div class="field">
             <label for="rel-param" id="rel-param-label">Release rate (units per period)</label>
             <input id="rel-param" type="number" min="0" step="1" inputmode="numeric">
-          </div>
+          <div class="hint">Changes with the rule above. Start near the bottleneck's output.</div></div>
         </div>
         <div class="field">
-          <label for="plan">Planned output per period <span class="opt">(optional; the result is checked against it)</span></label>
+          <label for="plan">Planned output per period <span class="opt">(optional)</span></label>
           <input id="plan" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 3.6">
-        </div>
+        <div class="hint">The output you promised. The verdict says how likely the line is to meet it.</div></div>
         <p id="form-error" class="form-error" role="alert" hidden></p>
         <div class="actions" style="margin-top:12px">
           <button type="button" id="assistToggle">✦ Fill from my description</button>
@@ -131,7 +159,7 @@
 
     <section class="panel" aria-label="Your line, running live">
       <div class="live-head">
-        <h2>Watch it run</h2>
+        <h2>Watch it run <button type="button" data-tip="watch"></button></h2>
         <div class="live-controls">
           <button type="button" class="btn small" id="lv-toggle">Pause</button>
           <label class="hint" for="lv-speed">Speed</label>
@@ -155,7 +183,7 @@
     </section>
 
     <section class="panel" aria-label="Ranked improvement options">
-      <h2>Where the next change pays</h2>
+      <h2>Where the next change pays <button type="button" data-tip="pays"></button></h2>
       <p class="sub">Expected gain in output per period for each single change, best first. Bars are paired simulation runs against the current line; whiskers are 95% ranges, so a change whose range crosses zero is not proven to help.</p>
       <div class="svgchart" id="chart"></div>
       <p class="caption" id="chart-cap"></p>
@@ -193,7 +221,7 @@
               <option value="20" selected>20</option>
               <option value="32">32 (slower, tighter ranges)</option>
             </select>
-          </div>
+          <div class="hint">More runs give tighter ranges but take longer.</div></div>
           <div class="field">
             <label for="periods">Periods per run</label>
             <select id="periods">
@@ -201,7 +229,7 @@
               <option value="300" selected>300</option>
               <option value="500">500</option>
             </select>
-          </div>
+          <div class="hint">Length of each simulated run. Longer runs average out more luck.</div></div>
         </div>
         <p class="hint">Every number on the page comes from these runs, with the first sixth of each run discarded as warm-up. The same engine ships as a tested Python reference implementation; the two agree exactly on the cases in the test suite.</p>
       </div>
@@ -209,7 +237,15 @@
   </div>
 
   <!-- ================= Find it from data ================= -->
-  <div id="view-data" hidden>
+  <div id="view-data" role="tabpanel" aria-labelledby="tab-data" hidden>
+    <div class="guide" aria-label="How to use this mode">
+      <ol class="steps">
+        <li><b>Paste a log</b> from your floor: one row per period, one column per station, with each station's state or output.</li>
+        <li><b>The tool reads it</b> with the active-period method: the station working the longest unbroken stretch is the bottleneck at that moment.</li>
+        <li><b>Read the share</b> of time each station was the bottleneck, and whether the bottleneck moves.</li>
+      </ol>
+      <p class="also"><b>Also here:</b> <i>Load example</i> shows three log formats.</p>
+    </div>
     <section class="work">
       <form class="panel" id="data-inputs" novalidate onsubmit="return false">
         <div class="panel-head">
@@ -224,12 +260,12 @@
         <div class="field">
           <label for="log">One row per period, one column per station</label>
           <textarea id="log" rows="14" spellcheck="false"></textarea>
-          <p class="hint">Cells are either states (busy, idle, starved, blocked, down) or units produced that period. A first column named "period" is ignored. Comma, tab or semicolon separated; a header row of station names is optional.</p>
+          <div class="hint">Cells are either states (busy, idle, starved, blocked, down) or units produced that period. A first column named "period" is ignored. Comma, tab or semicolon separated; a header row of station names is optional.</div>
         </div>
         <div class="field">
           <label for="log-file">Or load a file</label>
           <input id="log-file" type="file" accept=".csv,.tsv,.txt">
-        </div>
+        <div class="hint">A CSV, TSV or text file in the same format.</div></div>
         <p id="d-form-error" class="form-error" role="alert" hidden></p>
       </form>
 
@@ -249,7 +285,7 @@
     </section>
 
     <section class="panel" aria-label="Bottleneck share by station">
-      <h2>Bottleneck share by station</h2>
+      <h2>Bottleneck share by station <button type="button" data-tip="share"></button></h2>
       <p class="sub">Share of the logged periods in which each station was the momentary bottleneck, by the active-period method.</p>
       <div class="svgchart" id="d-chart"></div>
       <p class="caption" id="d-chart-cap"></p>
@@ -271,11 +307,7 @@
   </div>
 
   <footer class="kit-footer">
-    <p class="kit-siblings"><span class="kit-siblings-label">More tools:</span>
-      <a href="https://omidgolchin.github.io/bayesian-ab-lab/">A/B Test Decision Tool</a> ·
-      <a href="https://omidgolchin.github.io/queue-simulator/">Call Center Staffing Planner</a> ·
-      <a href="https://omidgolchin.github.io/experiment-hazard-simulator/">Agent Eval Planner</a> ·
-      <a href="https://omidgolchin.github.io/production-line-simulator/" aria-current="page">Production Line Bottleneck Finder</a></p>
+    <p class="kit-siblings"></p>
     <p>Built by Omid Golchin · <a href="https://github.com/omidgolchin/production-line-simulator">Code, tests and design decisions</a> · Everything runs in your browser; nothing you type is sent anywhere unless you use the AI fill with your own key.</p>
   </footer>
 </main>

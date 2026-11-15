@@ -47,7 +47,7 @@
     row.className = "stn-row";
     var bufCell;
     if (idx === 0) {
-      bufCell = '<span class="stn-nobuf">released work waits here</span>';
+      bufCell = '<span class="stn-nobuf">line start</span>';
     } else {
       bufCell = '<span class="stn-lab">Buffer in front</span>' +
         '<input class="stn-buf" type="number" min="1" step="1" placeholder="no limit" aria-label="Buffer space in front" value="' + esc(st.buf) + '">';
@@ -57,10 +57,10 @@
       '<input class="stn-name" type="text" aria-label="Station name" value="' + esc(st.name) + '"></span>' +
       '<span><span class="stn-lab">Output / period</span>' +
       '<input class="stn-mean" type="number" min="0" step="any" aria-label="Average output per period" value="' + esc(st.mean) + '"></span>' +
-      '<span><span class="stn-lab">Variability</span></span>' +
+      '<span class="stn-varwrap"><span class="stn-lab">Variability</span><span class="stn-varcell"></span></span>' +
       '<span class="stn-bufcell">' + bufCell + '</span>' +
       '<button type="button" class="stn-del" aria-label="Remove this station">×</button>';
-    var varCell = row.children[2];
+    var varCell = row.children[2].querySelector(".stn-varcell");
     var varSel = document.createElement("select");
     varSel.className = "stn-var";
     varSel.setAttribute("aria-label", "Variability");
@@ -939,5 +939,15 @@
   if (["12", "20", "32"].indexOf(String(state.reps)) >= 0) $("reps").value = String(state.reps);
   if (["200", "300", "500"].indexOf(String(state.periods)) >= 0) $("periods").value = String(state.periods);
   $("log").value = SAMPLES.planted;
+  Tool.explain({
+    mean: { t: "Output per period", d: "How many units this station finishes in one period when it has work to do, on average. In The Goal's dice game, a fair die averages 3.5." },
+    cv: { t: "Variability", d: "How much a station's output swings from period to period, as the coefficient of variation (standard deviation ÷ average). Low ≈ 0.1, some ≈ 0.25, high ≈ 0.5; pick Custom to type your own. Variability is why a line makes less than its slowest station's average: a bad period starves the next station, and a good period cannot be banked without a buffer." },
+    buf: { t: "Buffer in front", d: "How many waiting units fit in front of this station. When the buffer is full, the station before it is blocked and has to stop. Leave it blank for unlimited space." },
+    release: { t: "How work is released", d: "<b>Push</b>: release a fixed amount each period. <b>Drum-buffer-rope</b> (from The Goal): let in new work only when the bottleneck has room, so the bottleneck sets the pace (the drum), a small queue protects it (the buffer), and releases are tied to it (the rope). <b>CONWIP</b>: keep the total number of units in the line fixed; one finishes, one enters." },
+    watch: { t: "Watch it run", d: "A replay of one simulated run, period by period. Dots are units waiting in front of each station; a growing queue sits in front of the station holding the line back. The red frame is the bottleneck from the verdict." },
+    pays: { t: "Where the next change pays", d: "Each bar is one single change (add capacity at a station, or add buffer space), tested on the same random draws as the current line (common random numbers), so the difference reflects the change, not luck. Whiskers are 95% ranges: if a range crosses zero, the gain is not proven." },
+    share: { t: "Bottleneck share", d: "The share of periods in which each station was the bottleneck, by the active-period method (Roser, Nakano and Tanaka): at each moment, the station that has been working without a break the longest is the one holding the line back." }
+  });
+
   setMode(mode);
 })();

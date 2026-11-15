@@ -2,9 +2,9 @@
 
 For anyone who runs a production line (a job shop, a cell, a small plant): enter your stations with their average output, variability and buffer space, and get the bottleneck, the output the line can really sustain, and a ranked list of the changes that would raise it. Or paste a log of station states and get the bottleneck from the data instead.
 
-![The line running live: work piles up in front of the bottleneck station](docs/hero.gif)
+![The finder on three lines (the dice game, work released too fast, two stations sharing the blame), the explanation of release rules, and the log analysis](docs/hero.gif)
 
-![The finder: Paint is the bottleneck of a five-station line, expected output 3.35 per period, with the checks that back the verdict](docs/screenshots/desktop.png)
+![The finder on a desktop: the three-step guide, the station table, and the bottleneck verdict with its checks](docs/screenshots/desktop.png)
 
 **Use it:** https://omidgolchin.github.io/production-line-simulator/ (runs in your browser; nothing you type leaves it)
 
@@ -16,6 +16,7 @@ For anyone who runs a production line (a job shop, a cell, a small plant): enter
 - **Find it from data.** Paste or upload a log, one row per period and one column per station, cells either states (busy, starved, blocked, down) or units produced. The active-period method reads the bottleneck out of it, and the averages can be carried back into the first mode.
 - **Fill from my description.** Describe the line in plain words, or paste a shift report; a language model (your key, or copy the prompt into any assistant) fills the form, quoting the phrase each number came from. The model never computes the answer.
 - **Copy summary / Copy link.** The link carries the inputs, so a line can be shared and reopened exactly.
+- **Help where you need it.** Each mode opens with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
 
