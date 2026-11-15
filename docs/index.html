@@ -89,7 +89,7 @@
   <div id="view-analyze" role="tabpanel" aria-labelledby="tab-analyze">
     <div class="guide" aria-label="How to use this mode">
       <ol class="steps">
-        <li><b>List your stations in order</b>, with what each makes per period on average, how much that varies, and the space in front of it.</li>
+        <li><b>List your stations in order</b>, with what each makes per period on average, how much that varies, and the space in front of it. A period is any time step you choose (an hour, a shift, a day) <button type="button" data-tip="period"></button>; use the same one throughout.</li>
         <li><b>Say how work enters the line</b>: on a schedule, tied to the bottleneck, or capped in total.</li>
         <li><b>Read the verdict</b>: which station limits output, what the line can really make, and which single change pays most. <i>Watch it run</i> shows the queues form.</li>
       </ol>
@@ -116,7 +116,7 @@
           <button type="button" class="btn small" id="add-station">+ Add a station</button>
           <span class="hint" id="stn-count"></span>
         </div>
-        <p class="hint stn-help"><b>Output</b>: units a station finishes in a period when it has work, on average. <b>Variability</b>: how much that swings from period to period. <b>Buffer</b>: room for waiting units in front of a station; when it is full, the station before it has to stop.</p>
+        <p class="hint stn-help"><b>Output</b>: units a station finishes in a period (your time step: an hour, a shift, a day) when it has work, on average. <b>Variability</b>: how much that swings from period to period. <b>Buffer</b>: room for waiting units in front of a station; when it is full, the station before it has to stop.</p>
         <div class="grid2">
           <div class="field">
             <label for="rel">How work is released <button type="button" data-tip="release"></button></label>
@@ -145,8 +145,8 @@
 
       <section class="panel verdict" id="verdict" aria-live="polite">
         <p class="v-kicker" id="v-kicker">Bottleneck verdict</p>
-        <h3 class="v-title" id="v-title">…</h3>
-        <p class="v-body" id="v-body">…</p>
+        <h3 class="v-title" id="v-title">Simulating your line…</h3>
+        <p class="v-body" id="v-body">This takes a moment. The page runs the simulation in your browser, so JavaScript must be on.</p>
         <div class="kpis" id="v-kpis"></div>
         <div class="checks" id="v-checks"></div>
         <div class="actions">
@@ -271,8 +271,8 @@
 
       <section class="panel verdict" id="d-verdict" aria-live="polite">
         <p class="v-kicker">Bottleneck from your log</p>
-        <h3 class="v-title" id="dv-title">…</h3>
-        <p class="v-body" id="dv-body">…</p>
+        <h3 class="v-title" id="dv-title">Reading your log…</h3>
+        <p class="v-body" id="dv-body">The page analyzes the log in your browser, so JavaScript must be on.</p>
         <div class="kpis" id="dv-kpis"></div>
         <div class="checks" id="dv-checks"></div>
         <div class="actions">

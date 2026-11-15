@@ -34,7 +34,7 @@
 
   var VAR_OPTS = [
     ["steady", "Steady", 0.15], ["some", "Some", 0.3], ["lot", "A lot", 0.55],
-    ["die", "Die roll (1 to 6)", null], ["custom", "Custom cv", null]
+    ["die", "Die roll (1 to 6)", null], ["custom", "Custom (type a number)", null]
   ];
   function presetFor(cv) {
     for (var i = 0; i < 3; i++) if (Math.abs(cv - VAR_OPTS[i][2]) < 1e-9) return VAR_OPTS[i][0];
@@ -73,7 +73,7 @@
     varCell.appendChild(varSel);
     var cvIn = document.createElement("input");
     cvIn.className = "stn-cv"; cvIn.type = "number"; cvIn.min = "0"; cvIn.max = "2";
-    cvIn.step = "0.01"; cvIn.placeholder = "cv"; cvIn.value = st.cv;
+    cvIn.step = "0.01"; cvIn.placeholder = "0.3"; cvIn.value = st.cv;
     cvIn.setAttribute("aria-label", "Coefficient of variation");
     cvIn.hidden = st.varSel !== "custom";
     varCell.appendChild(cvIn);
@@ -135,7 +135,7 @@
       else if (r.varSel === "custom") {
         var cvEl = row.querySelector(".stn-cv");
         cv = r.cv === "" ? NaN : Number(r.cv);
-        if (!isFinite(cv) || cv < 0 || cv > 2) mark(cvEl, name + ": variability (cv) must be between 0 and 2.");
+        if (!isFinite(cv) || cv < 0 || cv > 2) mark(cvEl, name + ": variability must be between 0 (perfectly steady) and 2 (very erratic).");
       } else cv = VAR_OPTS.filter(function (o) { return o[0] === r.varSel; })[0][2];
       var buffer = null;
       if (i > 0 && r.buf !== "") {
@@ -319,44 +319,44 @@
         names[v.blocked_station] + " is blocked by the full buffer in front of " + BN + " in " +
         pct0(agg.blocked_share[v.blocked_station]) + " of periods. The station itself has capacity to spare; the room in front of it does not."]);
     } else if (bn === v.by_average) {
-      checks.push(["info", "BY SIMULATION", BN + " is the bottleneck",
+      checks.push(["info", "SIMULATED", BN + " is the bottleneck",
         BN + " limits the line in " + pct0(agg.limiting_share[bn]) + " of periods, and it also has the lowest average output (" +
         n2(R.means[bn]) + "). The simulation and the averages agree here."]);
     } else {
-      checks.push(["warn", "BY SIMULATION", "The averages point at a different station",
+      checks.push(["warn", "SIMULATED", "The averages point at a different station",
         names[v.by_average] + " has the lowest average output (" + n2(R.means[v.by_average]) + "), but " + BN +
         " limits the line most often (" + pct0(agg.limiting_share[bn]) + " of periods). With this much variability, trust the simulation."]);
     }
     /* 2: Little's law */
     var lr = agg.littles_ratio;
     if (lr === null || lr === undefined || !isFinite(lr)) {
-      checks.push(["info", "LITTLE'S LAW", "Nothing to check yet",
+      checks.push(["info", "CROSS-CHECK", "Nothing to check yet",
         "No units finished during the measured part of the runs, so work in process and cycle time have nothing to agree with."]);
     } else {
       var dev = Math.abs(lr - 1), prod = th * agg.mean_ct;
-      if (dev <= 0.05) checks.push(["ok", "LITTLE'S LAW", "The simulator's counters agree",
-        "Work in process (" + n1(agg.mean_wip) + ") matches throughput × cycle time (" + n2(th) + " × " + n1(agg.mean_ct) +
+      if (dev <= 0.05) checks.push(["ok", "CROSS-CHECK", "The simulator's counters agree",
+        "By Little's law, work in process (" + n1(agg.mean_wip) + ") should equal throughput × cycle time (" + n2(th) + " × " + n1(agg.mean_ct) +
         " = " + n1(prod) + ")" + (dev < 0.005 ? ", to within half a percent." : " within " + pct0(dev) + ".")]);
-      else if (dev <= 0.5) checks.push(["warn", "LITTLE'S LAW", "The line is still settling",
+      else if (dev <= 0.5) checks.push(["warn", "CROSS-CHECK", "The line is still settling",
         "Work in process (" + n1(agg.mean_wip) + ") sits " + pct0(dev) + " away from throughput × cycle time (" + n1(prod) +
         "): queues are still growing over this horizon, so read the WIP and cycle-time figures as approximate."]);
-      else checks.push(["fail", "LITTLE'S LAW", "The run never settles",
+      else checks.push(["fail", "CROSS-CHECK", "The run never settles",
         "Work in process (" + n1(agg.mean_wip) + ") is " + pct0(dev) + " away from throughput × cycle time (" + n1(prod) +
         "): queues grow through the whole run. Throughput is the settled number here; WIP and cycle time are lower bounds."]);
     }
     /* 3: Kingman next to simulation */
     var kgB = R.kg[bn], simQ = agg.mean_buffers[bn];
     if (!kgB || kgB.queue === null || kgB.queue === undefined) {
-      checks.push(["info", "KINGMAN", "No finite queue at " + BN,
+      checks.push(["info", "FORMULA CHECK", "No finite queue at " + BN,
         BN + " runs at or over the line's throughput on average, so the heavy-traffic approximation has no finite queue there, and neither does the line: its queue is the one that grows."]);
     } else if (kgB.util >= 0.98) {
-      checks.push(["info", "KINGMAN", "The formula explodes this close to saturation",
+      checks.push(["info", "FORMULA CHECK", "The formula explodes this close to saturation",
         "Kingman's heavy-traffic form puts " + n1(kgB.queue) + " units in front of " + BN + "; the simulation averages " +
         n1(simQ) + ". At " + pct0(Math.min(kgB.util, 1)) + " utilization the formula's denominator (average capacity minus throughput) is so small that the estimate blows up. Use the simulated queue here; the formula is a cross-check at lower utilizations."]);
     } else {
       var dir = kgB.queue >= simQ ? "high" : "low";
       var kdev = simQ > 0.05 ? " It runs " + dir + " by about " + pct0(Math.abs(kgB.queue - simQ) / simQ) + " at this utilization (" + pct0(Math.min(kgB.util, 1)) + ")." : "";
-      checks.push(["info", "KINGMAN", "Formula next to simulation",
+      checks.push(["info", "FORMULA CHECK", "Formula next to simulation",
         "Kingman's heavy-traffic approximation puts " + n1(kgB.queue) + " units in front of " + BN +
         "; the simulation averages " + n1(simQ) + "." + kdev]);
     }
@@ -371,12 +371,12 @@
     var relText = "Set to make " + n2(rows[0].target) + " a period (95% of what the line can pass), work in process is " + wipList +
       ". Set 20% too high, it becomes " + highList + ".";
     if (mine === "push" && fragile) {
-      checks.push(["warn", "RELEASE RULES", "Push only works while the rate is right",
+      checks.push(["warn", "RELEASE RULE", "Push only works while the rate is right",
         relText + " A pull rule caps the damage of a wrong setting; push lets the queue grow until someone notices."]);
     } else if (mine !== "push") {
-      checks.push(["ok", "RELEASE RULES", labels[mine] + " protects you from a wrong setting", relText]);
+      checks.push(["ok", "RELEASE RULE", labels[mine] + " protects you from a wrong setting", relText]);
     } else {
-      checks.push(["info", "RELEASE RULES", "Release rules at the same output", relText]);
+      checks.push(["info", "RELEASE RULE", "Release rules at the same output", relText]);
     }
     /* 5: plan, or what dependence costs */
     if (R.parsed.plan !== null && R.parsed.plan !== undefined) {
@@ -389,7 +389,7 @@
       var minMean = Math.min.apply(null, R.means);
       var capVal = R.capAgg ? R.capAgg.throughput : th;
       var loss = minMean - capVal;
-      checks.push(["info", "DEPENDENCE", "What dependence costs",
+      checks.push(["info", "VARIABILITY COST", "What dependence costs",
         "The slowest station averages " + n2(minMean) + " per period on its own. " +
         (R.capAgg ? "Even with an endless supply, the line passes " + n2(capVal)
                   : "As released, the line passes " + n2(capVal)) +
@@ -578,6 +578,10 @@
     var rel = $("rel").value;
     var labels = { push: "Release rate (units per period)", dbr: "Rope: units allowed at or before the bottleneck", conwip: "Work-in-process cap (units)" };
     $("rel-param-label").textContent = labels[rel];
+    var plain = { push: "Push: a fixed amount of new work enters every period, whatever the line is doing. Simple, but too fast builds queues and too slow starves the line.",
+      dbr: "Drum-buffer-rope: new work enters only when the bottleneck has room, so the slowest station sets the pace and a small queue keeps it from ever running dry.",
+      conwip: "CONWIP: the line holds a fixed number of units in total; when one finishes, one new unit enters." };
+    var rh = $("rel").closest(".field").querySelector(".hint"); if (rh) rh.textContent = plain[rel];
     $("rel-param").value = relVals[paramKey(rel)];
   }
   function applyExample(key) {
@@ -661,10 +665,10 @@
     }).join("");
     var checks = [];
     if (allActive) {
-      checks.push(["warn", "ACTIVE PERIOD", "This log has no idle time to read",
+      checks.push(["warn", "LONGEST RUN", "This log has no idle time to read",
         "The method works by watching whose unbroken active run is longest. With every station active in every period, all runs grow together and no winner emerges."]);
     } else {
-      checks.push(["info", "ACTIVE PERIOD", "Longest unbroken run wins",
+      checks.push(["info", "LONGEST RUN", "Longest unbroken run wins",
         B + " was the momentary bottleneck in " + pct0(a.bottleneck_share[top]) + " of the " + T + " periods. Longest unbroken run in the log: " + B + ", " + a.longest_active[top] + " periods."]);
     }
     var withOut = a.mean_output.map(function (m, i) { return m === null ? -1 : i; }).filter(function (i) { return i >= 0; });
@@ -680,9 +684,9 @@
       checks.push(["info", "FROM DATA", "States only",
         "This log records states, not output counts, so there are no averages to compare against the active-period reading."]);
     }
-    if (T < 30) checks.push(["warn", "THE LOG", "A short log",
+    if (T < 30) checks.push(["warn", "YOUR LOG", "A short log",
       T + " periods is short for shares: under 30 periods, treat the winner as a lead, not a verdict."]);
-    else checks.push(["ok", "THE LOG", "Log read cleanly", T + " periods across " + names.length + " stations."]);
+    else checks.push(["ok", "YOUR LOG", "Log read cleanly", T + " periods across " + names.length + " stations."]);
     var idleIdx = 0;
     a.active_share.forEach(function (s, i) { if (s < a.active_share[idleIdx]) idleIdx = i; });
     if (a.active_share[idleIdx] < 0.5 && v.reason !== "never-active") {
@@ -940,6 +944,7 @@
   if (["200", "300", "500"].indexOf(String(state.periods)) >= 0) $("periods").value = String(state.periods);
   $("log").value = SAMPLES.planted;
   Tool.explain({
+    period: { t: "Period", d: "Whatever time step suits your line: an hour, a shift, a day. Pick one and use it for every number on the page: output per period, planned output, and the rows of a log." },
     mean: { t: "Output per period", d: "How many units this station finishes in one period when it has work to do, on average. In The Goal's dice game, a fair die averages 3.5." },
     cv: { t: "Variability", d: "How much a station's output swings from period to period, as the coefficient of variation (standard deviation ÷ average). Low ≈ 0.1, some ≈ 0.25, high ≈ 0.5; pick Custom to type your own. Variability is why a line makes less than its slowest station's average: a bad period starves the next station, and a good period cannot be banked without a buffer." },
     buf: { t: "Buffer in front", d: "How many waiting units fit in front of this station. When the buffer is full, the station before it is blocked and has to stop. Leave it blank for unlimited space." },
