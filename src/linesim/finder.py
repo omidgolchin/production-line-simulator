@@ -109,7 +109,7 @@ def tool_config(tool: dict) -> LineConfig:
         release = {"mode": "push", "rate": max(1, _round_half_up(rel["rate"]))}
     elif mode == "dbr":
         means = [s.mean for s in stations]
-        release = {"mode": "dbr",
+        release = {"mode": "rope",
                    "bottleneck": means.index(min(means)),
                    "time_buffer": int(rel.get("stock", 10))}
     elif mode == "conwip":
@@ -310,20 +310,26 @@ def improvement_options(cfg: LineConfig, reps: int = 16,
 
 def release_comparison(cfg: LineConfig, reps: int = 16,
                        periods: int = 300, warmup: int = 50,
-                       seed: int = 20261113) -> list:
-    """Push vs drum-buffer-rope vs CONWIP at a matched release pace.
+                       seed: int = 20261113, share: float = 0.95) -> list:
+    """Push vs drum-buffer-rope vs CONWIP at the same output.
 
-    Push releases at the bottleneck's mean pace (rounded); the rope
-    releases at the same pace with the bottleneck's buffer pre-loaded
-    from the line's own buffer input; CONWIP's cap is the smallest on
-    a ladder whose throughput reaches 98% of push's.
+    The target is ``share`` of what the line passes when fed without
+    limit. Push releases at exactly that rate; drum-buffer-rope's rope
+    and CONWIP's cap are the smallest values on a ladder whose output
+    reaches the target (Hopp & Spearman: at equal throughput, a pull
+    rule needs less work in process than push when push releases at
+    random; a perfectly smooth push at the right rate is push's best
+    case). What differs between rules is the work in process and cycle
+    time each needs, and how badly each does when its setting is 20%
+    too high (``wip_if_high``): push then releases faster than the line
+    can work and its queues grow all run, while a pull rule only holds
+    a few more units (Hopp & Spearman, *Factory Physics*, ch. 10).
     """
     means = [s.mean for s in cfg.stations]
     b = means.index(min(means))
-    pace = max(1, _round_half_up(means[b]))
-    stock = 10
-    if cfg.buffer_limits is not None and b >= 1:
-        stock = min(cfg.buffer_limits[b - 1], 10 ** 5)
+    fed = capability(cfg, reps=max(6, reps // 2), periods=periods,
+                     warmup=warmup, seed=seed)["throughput"]
+    target = share * fed
 
     def variant(release):
         return LineConfig(stations=cfg.stations,
@@ -337,24 +343,39 @@ def release_comparison(cfg: LineConfig, reps: int = 16,
                 "throughput_half": agg["throughput_half"],
                 "mean_wip": agg["mean_wip"], "mean_ct": agg["mean_ct"]}
 
-    push = run({"mode": "push", "rate": pace}, reps)
-    dbr = run({"mode": "dbr", "bottleneck": b, "time_buffer": stock},
-              reps)
-    target = 0.98 * push["throughput"]
-    ladder = [4, 6, 8, 10, 13, 16, 20, 25, 30, 40, 50, 65, 80, 100]
-    chosen, conwip = ladder[-1], None
-    for w in ladder:
-        agg = _aggregate(_run_reps(variant({"mode": "conwip", "wip": w}),
-                                   max(6, reps // 2), periods, warmup,
-                                   seed), cfg.n)
-        if agg["throughput"] >= target:
-            chosen = w
-            break
-    conwip = run({"mode": "conwip", "wip": chosen}, reps)
+    def reaches(release):
+        agg = _aggregate(_run_reps(variant(release), max(6, reps // 2),
+                                   periods, warmup, seed), cfg.n)
+        return agg["throughput"] >= 0.995 * target
+
+    def smallest(make):
+        """Smallest whole setting (1..200) whose output reaches the
+        target; bisection, since output does not fall as it grows."""
+        lo, hi = 1, 200
+        if not reaches(make(hi)):
+            return hi
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if reaches(make(mid)):
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+
+    rate = _round_half_up(target * 100) / 100
+    push = run({"mode": "push", "rate": rate}, reps)
+    rope = smallest(lambda v: {"mode": "rope", "bottleneck": b,
+                               "time_buffer": v})
+    dbr = run({"mode": "rope", "bottleneck": b, "time_buffer": rope}, reps)
+    cap = smallest(lambda v: {"mode": "conwip", "wip": v})
+    conwip = run({"mode": "conwip", "wip": cap}, reps)
+    push["wip_if_high"] = run({"mode": "push", "rate": _round_half_up(rate * 120) / 100}, reps)["mean_wip"]
+    dbr["wip_if_high"] = run({"mode": "rope", "bottleneck": b, "time_buffer": math.ceil(rope * 1.2)}, reps)["mean_wip"]
+    conwip["wip_if_high"] = run({"mode": "conwip", "wip": math.ceil(cap * 1.2)}, reps)["mean_wip"]
     return [
-        {"rule": "push", "pace": pace, **push},
-        {"rule": "dbr", "pace": pace, "stock": stock, **dbr},
-        {"rule": "conwip", "wip": chosen, **conwip},
+        {"rule": "push", "rate": rate, "target": target, **push},
+        {"rule": "dbr", "stock": rope, "target": target, **dbr},
+        {"rule": "conwip", "wip": cap, "target": target, **conwip},
     ]
 
 

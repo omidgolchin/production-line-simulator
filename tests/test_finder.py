@@ -52,7 +52,7 @@ def test_tool_config_mapping():
     assert cfg.stations[1].kind == "die"
     assert cfg.stations[2].kind == "normal" and cfg.stations[2].sigma == 0
     assert cfg.buffer_limits == [8, 10 ** 6]
-    assert cfg.release == {"mode": "dbr", "bottleneck": 2, "time_buffer": 6}
+    assert cfg.release == {"mode": "rope", "bottleneck": 2, "time_buffer": 6}
     tool["stations"][1]["buffer"] = None
     assert tool_config(tool).buffer_limits is None
 
@@ -116,15 +116,23 @@ def test_top_option_is_capacity_at_the_bottleneck():
     assert gains == sorted(gains, reverse=True)
 
 
-def test_release_comparison_conwip_is_leaner():
+def test_release_comparison_pull_is_leaner_at_the_same_output():
+    """Every rule is run at 95% of what the line passes fed without
+    limit, and then with its setting 20% too high: push releases faster
+    than the line can work and its queues grow all run, while CONWIP
+    holds only the extra units it was allowed (Hopp & Spearman)."""
     cfg = LineConfig(stations=[die() for _ in range(5)],
                      buffer_limits=[50] * 4,
                      release={"mode": "push", "rate": 4})
     rows = {r["rule"]: r for r in release_comparison(
         cfg, reps=10, periods=300, warmup=50, seed=3)}
-    assert rows["conwip"]["throughput"] >= 0.95 * rows["push"]["throughput"]
-    assert rows["conwip"]["mean_wip"] < 0.5 * rows["push"]["mean_wip"]
-    assert rows["dbr"]["mean_wip"] < rows["push"]["mean_wip"]
+    target = rows["push"]["target"]
+    for r in rows.values():
+        assert r["throughput"] >= 0.97 * target, r
+    # set 20% too high, push outruns the line; CONWIP holds a few more
+    assert rows["push"]["wip_if_high"] > 3 * rows["push"]["mean_wip"]
+    assert rows["conwip"]["wip_if_high"] < 1.3 * rows["conwip"]["mean_wip"]
+    assert rows["push"]["wip_if_high"] > 3 * rows["conwip"]["wip_if_high"]
 
 
 # ------------------------------------------------------------ data mode

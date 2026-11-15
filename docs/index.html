@@ -94,7 +94,7 @@
             <label for="rel">How work is released</label>
             <select id="rel">
               <option value="push">Push: release on a schedule</option>
-              <option value="dbr">Drum-buffer-rope: at the bottleneck's pace</option>
+              <option value="dbr">Drum-buffer-rope: tied to the bottleneck</option>
               <option value="conwip">CONWIP: cap total work in process</option>
             </select>
           </div>
@@ -162,29 +162,29 @@
     </section>
 
     <details class="more">
-      <summary>The full numbers</summary>
-      <div class="body" id="full-numbers"></div>
+      <summary>The full numbers <span class="sub">every station, every change priced</span></summary>
+      <div class="more-body" id="full-numbers"></div>
     </details>
 
     <details class="more">
-      <summary>Release rules compared</summary>
-      <div class="body" id="release-numbers"></div>
+      <summary>Release rules compared <span class="sub">push, drum-buffer-rope, CONWIP</span></summary>
+      <div class="more-body" id="release-numbers"></div>
     </details>
 
     <details class="more">
-      <summary>How the verdict is decided</summary>
-      <div class="body">
+      <summary>How the verdict is decided <span class="sub">simulation, formulas, sources</span></summary>
+      <div class="more-body">
         <p><strong>Bottleneck by simulation.</strong> The line is simulated period by period, many times over. In each period, a station counts as limiting when work was waiting in front of it, room was free behind it, and its own capacity that period was the binding limit. A station's limiting share is the fraction of periods it held the line back that way; ties count for nobody. This is the headline test, because the station with the lowest average is not always the station that limits a variable line.</p>
         <p><strong>Little's law.</strong> Work in process equals throughput times cycle time (Little, 1961). The check compares the simulator's own three counters; a settled line satisfies it closely, and a line whose queues grow all run long does not, which the check reports instead of hiding.</p>
         <p><strong>Kingman's approximation.</strong> Next to the simulated queue in front of each station, the full numbers show Kingman's heavy-traffic form: queue ≈ (arrival variance + capacity variance) / (2 × (average capacity − throughput)), with arrival variability carried station to station by Whitt's departure rule. In this batch-period model the formula runs high at moderate utilization (by roughly a third to double on the tested lines) and explodes when a station's average capacity sits within a couple of percent of throughput, where the simulated queue is the number to use; the check on the verdict panel says which case this line is.</p>
-        <p><strong>Release rules.</strong> Push releases work on a schedule, whatever the line can absorb. Drum-buffer-rope releases at the bottleneck's pace, with a protective stock held in front of it (Goldratt &amp; Cox, 1984). CONWIP releases a new unit only when one leaves, capping total work in process (Spearman, Woodruff &amp; Hopp, 1990). The comparison holds the line fixed and asks how much work in process each rule needs at the same output.</p>
+        <p><strong>Release rules.</strong> Push releases work on a schedule, whatever the line can absorb. Drum-buffer-rope ties release to the bottleneck: work waiting at or before the bottleneck is held at the rope length, so a unit enters only when the bottleneck takes one (Goldratt &amp; Cox, 1984). CONWIP releases a new unit only when one leaves the line, capping total work in process (Spearman, Woodruff &amp; Hopp, 1990). The comparison sets every rule to the same output and asks what work in process each needs, and what happens when its setting is 20% too high: push's queues then grow all run, a pull rule holds only the extra units it was allowed (Hopp &amp; Spearman, <i>Factory Physics</i>).</p>
         <p><strong>From data.</strong> The second mode uses the active-period method (Roser, Nakano &amp; Tanaka, 2001): the station that has been active longest without a break is the momentary bottleneck. The experiments behind this tool, including what language models get right and wrong about such lines, are in the <a href="https://github.com/omidgolchin/production-line-simulator#research-notes">research notes</a>.</p>
       </div>
     </details>
 
     <details class="more">
       <summary>Settings: simulation size</summary>
-      <div class="body">
+      <div class="more-body">
         <div class="grid2">
           <div class="field">
             <label for="reps">Repetitions per scenario</label>
@@ -257,12 +257,12 @@
 
     <details class="more">
       <summary>Station by station</summary>
-      <div class="body" id="data-numbers"></div>
+      <div class="more-body" id="data-numbers"></div>
     </details>
 
     <details class="more">
       <summary>How the active-period method works</summary>
-      <div class="body">
+      <div class="more-body">
         <p>In every period, the momentary bottleneck is the station that has been active longest without a break (Roser, Nakano &amp; Tanaka, 2001). The logic is simple: a station that is starved or blocked keeps having its run reset, while the bottleneck works on, so its unbroken run keeps growing until it is the longest. A station's bottleneck share is the fraction of periods in which it held that spot, with tied periods split evenly.</p>
         <p>The method needs a log that shows idle time. A state log (busy, starved, blocked, down) is ideal. An output log works when stations post zeros in the periods they could not run. If every station posts output in every period, no station can be separated from the others from that log alone, and the tool says so rather than guessing.</p>
         <p>One caution: the lowest average output does not by itself identify the bottleneck. A station can post low output because it is starved by the station in front of it. The verdict panel compares the two readings and flags it when they point at different stations.</p>

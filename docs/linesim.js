@@ -90,6 +90,10 @@
       ropeRate = stationMean(cfg.stations[b]);
       var tb = cfg.release.time_buffer || 0;
       for (var p = 0; p < tb; p++) buffers[b].push(0);
+    } else if (mode === "rope") {
+      /* drum-buffer-rope: release tied to the bottleneck's consumption */
+      var rb = cfg.release.bottleneck, rtb = Math.trunc(cfg.release.time_buffer || 0);
+      for (var rp = 0; rp < rtb; rp++) buffers[rb].push(0);
     } else if (mode === "conwip") {
       var W = Math.trunc(cfg.release.wip);
       for (var w0 = 0; w0 < W; w0++) buffers[0].push(0);
@@ -104,9 +108,17 @@
       var caps = cfg.stations.map(function (s) { return stationDraw(s, rng); });
       var entered = 0;
       if (mode === "push") {
-        var r1 = Math.trunc(cfg.release.rate);
+        ropeAcc += Number(cfg.release.rate); /* fractional rates */
+        var r1 = Math.trunc(ropeAcc);
+        ropeAcc -= r1;
         for (var q = 0; q < r1; q++) buffers[0].push(t);
         entered = r1;
+      } else if (mode === "rope") {
+        var seg = 0;
+        for (var sj = 0; sj <= cfg.release.bottleneck; sj++) seg += buffers[sj].length;
+        var r3 = Math.max(0, Math.trunc(cfg.release.time_buffer || 0) - seg);
+        for (var q3 = 0; q3 < r3; q3++) buffers[0].push(t);
+        entered = r3;
       } else if (mode === "dbr") {
         ropeAcc += ropeRate;
         var r2 = Math.floor(ropeAcc);
@@ -212,7 +224,7 @@
     if (rel.mode === "push") release = { mode: "push", rate: Math.max(1, Math.round(rel.rate)) };
     else if (rel.mode === "dbr") {
       var means = stations.map(stationMean);
-      release = { mode: "dbr", bottleneck: means.indexOf(Math.min.apply(null, means)), time_buffer: Math.trunc(rel.stock || 10) };
+      release = { mode: "rope", bottleneck: means.indexOf(Math.min.apply(null, means)), time_buffer: Math.trunc(rel.stock == null ? 10 : rel.stock) };
     } else if (rel.mode === "conwip") release = { mode: "conwip", wip: Math.max(1, Math.trunc(rel.wip)) };
     else release = { mode: "infinite" };
     return { stations: stations, buffer_limits: bufferLimits, release: release };
@@ -320,35 +332,47 @@
     out.sort(function (a, b) { return b.gain - a.gain; });
     return out;
   }
+  /* Push vs drum-buffer-rope vs CONWIP at the same output: share (0.95) of
+   * what the line passes fed without limit. Mirrors release_comparison. */
   function releaseComparison(cfg, o) {
     o = o || {};
     var reps = o.reps || 16, periods = o.periods || 300, warmup = o.warmup == null ? 50 : o.warmup, seed = o.seed || 20261113;
+    var share = o.share || 0.95;
     var means = cfg.stations.map(stationMean);
     var b = means.indexOf(Math.min.apply(null, means));
-    var pace = Math.max(1, Math.round(means[b]));
-    var stock = 10;
-    if (cfg.buffer_limits && b >= 1) stock = Math.min(cfg.buffer_limits[b - 1], 100000);
+    var half = Math.max(6, Math.floor(reps / 2));
+    var fed = capability(cfg, { reps: half, periods: periods, warmup: warmup, seed: seed }).throughput;
+    var target = share * fed;
     function variant(release) { return { stations: cfg.stations, buffer_limits: cfg.buffer_limits, release: release }; }
     function run(release, rps) {
       var agg = aggregate(runReps(variant(release), rps, periods, warmup, seed), cfg.stations.length);
       return { throughput: agg.throughput, throughput_half: agg.throughput_half, mean_wip: agg.mean_wip, mean_ct: agg.mean_ct };
     }
-    var push = run({ mode: "push", rate: pace }, reps);
-    var dbr = run({ mode: "dbr", bottleneck: b, time_buffer: stock }, reps);
-    var target = 0.98 * push.throughput;
-    var ladder = [4, 6, 8, 10, 13, 16, 20, 25, 30, 40, 50, 65, 80, 100];
-    var chosen = ladder[ladder.length - 1];
-    for (var li = 0; li < ladder.length; li++) {
-      var agg2 = aggregate(runReps(variant({ mode: "conwip", wip: ladder[li] }), Math.max(6, Math.floor(reps / 2)), periods, warmup, seed), cfg.stations.length);
-      if (agg2.throughput >= target) { chosen = ladder[li]; break; }
+    function reaches(release) {
+      return aggregate(runReps(variant(release), half, periods, warmup, seed), cfg.stations.length).throughput >= 0.995 * target;
     }
-    var conwip = run({ mode: "conwip", wip: chosen }, reps);
+    function smallest(make) { /* bisection over whole settings 1..200 */
+      var lo = 1, hi = 200;
+      if (!reaches(make(hi))) return hi;
+      while (lo < hi) { var mid = Math.floor((lo + hi) / 2); if (reaches(make(mid))) hi = mid; else lo = mid + 1; }
+      return lo;
+    }
+    var rate = Math.round(target * 100) / 100;
+    var push = run({ mode: "push", rate: rate }, reps);
+    var rope = smallest(function (v) { return { mode: "rope", bottleneck: b, time_buffer: v }; });
+    var dbr = run({ mode: "rope", bottleneck: b, time_buffer: rope }, reps);
+    var cap = smallest(function (v) { return { mode: "conwip", wip: v }; });
+    var conwip = run({ mode: "conwip", wip: cap }, reps);
+    push.wip_if_high = run({ mode: "push", rate: Math.round(rate * 120) / 100 }, reps).mean_wip;
+    dbr.wip_if_high = run({ mode: "rope", bottleneck: b, time_buffer: Math.ceil(rope * 1.2) }, reps).mean_wip;
+    conwip.wip_if_high = run({ mode: "conwip", wip: Math.ceil(cap * 1.2) }, reps).mean_wip;
     return [
-      Object.assign({ rule: "push", pace: pace }, push),
-      Object.assign({ rule: "dbr", pace: pace, stock: stock }, dbr),
-      Object.assign({ rule: "conwip", wip: chosen }, conwip)
+      Object.assign({ rule: "push", rate: rate, target: target }, push),
+      Object.assign({ rule: "dbr", stock: rope, target: target }, dbr),
+      Object.assign({ rule: "conwip", wip: cap, target: target }, conwip)
     ];
   }
+
 
   /* ---------------- data mode ---------------- */
   var ACTIVE_WORDS = { active: 1, working: 1, busy: 1, running: 1, processing: 1, producing: 1, up: 1, "true": 1, yes: 1, x: 1 };

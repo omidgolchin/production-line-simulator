@@ -15,7 +15,9 @@
     });
   }
   function n1(x) { return F.num(x, 1); }
-  function n2(x) { return F.num(x, 2); }
+  function n2(x) { var v = F.num(x, 2); return v === "-0.00" || v === "−0.00" ? "0.00" : v; }
+  /* a signed gain: "+0.42", "−0.03", never "+-0.00" */
+  function sg2(x) { var v = n2(x); return v === "0.00" ? "±0.00" : (x > 0 ? "+" : "") + v; }
   function pct0(x) { return F.pct(x, 0); }
   function debounce(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms); }; }
 
@@ -149,7 +151,7 @@
     var pv = paramEl.value === "" ? NaN : Number(paramEl.value);
     if (rel === "push" && (!isFinite(pv) || pv < 1 || Math.floor(pv) !== pv)) mark(paramEl, "Release rate: a whole number of units per period, 1 or more.");
     if (rel === "conwip" && (!isFinite(pv) || pv < 1 || Math.floor(pv) !== pv)) mark(paramEl, "Work-in-process cap: a whole number, 1 or more.");
-    if (rel === "dbr" && (!isFinite(pv) || pv < 0 || Math.floor(pv) !== pv)) mark(paramEl, "Protection stock: a whole number, 0 or more.");
+    if (rel === "dbr" && (!isFinite(pv) || pv < 1 || Math.floor(pv) !== pv)) mark(paramEl, "Rope length: a whole number, 1 or more.");
     if (isFinite(pv)) relVals[paramKey(rel)] = pv;
     var release = rel === "push" ? { mode: "push", rate: relVals.rate }
       : rel === "dbr" ? { mode: "dbr", stock: relVals.stock }
@@ -181,7 +183,7 @@
       ? "add capacity at " + names[o.station] + " (" + (o.delta >= 0 ? "+" : "") + n2(o.delta) + " per period)"
       : "add " + o.add + " buffer spaces in front of " + names[o.station];
     if (!withGain) return base;
-    return base + ", for about +" + n2(o.gain) + " per period (" +
+    return base + ", for about " + sg2(o.gain) + " per period (" +
       n2(o.gain - o.gain_half) + " to " + n2(o.gain + o.gain_half) + ")";
   }
   function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -257,7 +259,7 @@
         return { title: "You are releasing work faster than the line can take it.",
           body: "Releases of " + R.tool.release.rate + " per period run into " + BN + ", which averages " +
             n2(R.means[bn]) + ". Output stays at " + n2(th) + " per period; the extra work only piles up in front of " +
-            BN + ", with " + n1(agg.mean_wip) + " units in process on average. Release at the bottleneck's pace instead (drum-buffer-rope, compared below), or cap work in process." };
+            BN + ", with " + n1(agg.mean_wip) + " units in process on average. Tie release to the bottleneck (drum-buffer-rope) or cap work in process (CONWIP); both are compared below." };
       case "release-limited":
         return { title: "Your release rate, not the line, is the limit.",
           body: "You release " + R.tool.release.rate + " per period and the line passes " + n2(th) + ". Fed freely, the same line would pass about " +
@@ -334,7 +336,7 @@
       var dev = Math.abs(lr - 1), prod = th * agg.mean_ct;
       if (dev <= 0.05) checks.push(["ok", "LITTLE'S LAW", "The simulator's counters agree",
         "Work in process (" + n1(agg.mean_wip) + ") matches throughput × cycle time (" + n2(th) + " × " + n1(agg.mean_ct) +
-        " = " + n1(prod) + ") within " + pct0(dev) + "."]);
+        " = " + n1(prod) + ")" + (dev < 0.005 ? ", to within half a percent." : " within " + pct0(dev) + ".")]);
       else if (dev <= 0.5) checks.push(["warn", "LITTLE'S LAW", "The line is still settling",
         "Work in process (" + n1(agg.mean_wip) + ") sits " + pct0(dev) + " away from throughput × cycle time (" + n1(prod) +
         "): queues are still growing over this horizon, so read the WIP and cycle-time figures as approximate."]);
@@ -358,21 +360,23 @@
         "Kingman's heavy-traffic approximation puts " + n1(kgB.queue) + " units in front of " + BN +
         "; the simulation averages " + n1(simQ) + "." + kdev]);
     }
-    /* 4: release rules */
+    /* 4: release rules, compared at the same output and with a wrong setting */
     var rows = R.relCmp, labels = { push: "Push", dbr: "Drum-buffer-rope", conwip: "CONWIP" };
-    var maxTh = Math.max.apply(null, rows.map(function (r) { return r.throughput; }));
-    var lean = rows.filter(function (r) { return r.throughput >= 0.98 * maxTh; })
-      .sort(function (a, b) { return a.mean_wip - b.mean_wip; })[0];
-    var cur = rows.filter(function (r) { return r.rule === R.tool.release.mode; })[0];
+    var byRule = {}; rows.forEach(function (r) { byRule[r.rule] = r; });
     var wipList = rows.map(function (r) { return labels[r.rule] + " " + n1(r.mean_wip); }).join(", ");
-    if (cur && lean && cur.rule === lean.rule) {
-      checks.push(["ok", "RELEASE RULES", "Your release rule is the leanest here",
-        "At matched output (about " + n2(maxTh) + " per period), " + labels[cur.rule] + " holds work in process to " +
-        n1(cur.mean_wip) + " units. Work in process by rule: " + wipList + "."]);
-    } else if (lean) {
-      checks.push(["info", "RELEASE RULES", "Same output, less work in process",
-        "At matched output (about " + n2(maxTh) + " per period), " + labels[lean.rule] + " needs the least work in process: " +
-        n1(lean.mean_wip) + " units. Work in process by rule: " + wipList + "."]);
+    var highList = rows.map(function (r) { return labels[r.rule] + " " + n1(r.wip_if_high); }).join(", ");
+    var pullHigh = Math.min(byRule.dbr.wip_if_high, byRule.conwip.wip_if_high);
+    var fragile = byRule.push.wip_if_high > 2 * pullHigh;
+    var mine = R.tool.release.mode;
+    var relText = "Set to make " + n2(rows[0].target) + " a period (95% of what the line can pass), work in process is " + wipList +
+      ". Set 20% too high, it becomes " + highList + ".";
+    if (mine === "push" && fragile) {
+      checks.push(["warn", "RELEASE RULES", "Push only works while the rate is right",
+        relText + " A pull rule caps the damage of a wrong setting; push lets the queue grow until someone notices."]);
+    } else if (mine !== "push") {
+      checks.push(["ok", "RELEASE RULES", labels[mine] + " protects you from a wrong setting", relText]);
+    } else {
+      checks.push(["info", "RELEASE RULES", "Release rules at the same output", relText]);
     }
     /* 5: plan, or what dependence costs */
     if (R.parsed.plan !== null && R.parsed.plan !== undefined) {
@@ -442,7 +446,7 @@
         bars: true, color: "accent"
       }],
       hLines: [{ y: 0, color: "fg" }],
-      xTicks: opts.map(function (_, i) { return i; }),
+      xTicks: opts.map(function (_, i) { return i; }), xMin: -0.6, xMax: opts.length - 0.4,
       xFormat: function (x) { return labels[Math.round(x)] || ""; },
       yFormat: function (y) { return n2(y); }
     });
@@ -463,7 +467,7 @@
         (R.means[i] > 0 ? pct0(Math.min(agg.throughput / R.means[i], 1.5)) : "—") + "</td></tr>";
     }).join("");
     var optRows = R.options.map(function (o) {
-      return "<tr><td>" + esc(capFirst(optionText(o, names, false))) + "</td><td>+" + n2(o.gain) +
+      return "<tr><td>" + esc(capFirst(optionText(o, names, false))) + "</td><td>" + sg2(o.gain) +
         "</td><td>" + n2(o.gain - o.gain_half) + " to " + n2(o.gain + o.gain_half) + "</td><td>" + n2(o.throughput) + "</td></tr>";
     }).join("");
     $("full-numbers").innerHTML =
@@ -480,18 +484,19 @@
   function renderReleaseTable(R) {
     var labels = { push: "Push", dbr: "Drum-buffer-rope", conwip: "CONWIP" };
     var rows = R.relCmp.map(function (r) {
-      var pace = r.rule === "conwip" ? "cap " + r.wip + " in process"
-        : r.rule === "dbr" ? "pace " + r.pace + ", stock " + r.stock
-        : "release " + r.pace + " / period";
-      return "<tr><td>" + labels[r.rule] + (r.rule === R.tool.release.mode ? " (yours)" : "") + "</td><td>" + pace +
-        "</td><td>" + n2(r.throughput) + " ± " + n2(r.throughput_half) + "</td><td>" + n1(r.mean_wip) + "</td><td>" + n1(r.mean_ct) + "</td></tr>";
+      var setting = r.rule === "conwip" ? "cap " + r.wip + " in process"
+        : r.rule === "dbr" ? "rope " + r.stock + " units ahead of " + R.names[R.v.bottleneck]
+        : "release " + n2(r.rate) + " / period";
+      return "<tr><td>" + labels[r.rule] + (r.rule === R.tool.release.mode ? " (your rule)" : "") + "</td><td>" + setting +
+        "</td><td>" + n2(r.throughput) + " ± " + n2(r.throughput_half) + "</td><td>" + n1(r.mean_wip) + "</td><td>" + n1(r.mean_ct) +
+        "</td><td>" + n1(r.wip_if_high) + "</td></tr>";
     }).join("");
     $("release-numbers").innerHTML =
-      '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Release rule</th><th>Setting</th><th>Output / period</th><th>Work in process</th><th>Cycle time</th></tr></thead><tbody>' +
+      '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Release rule</th><th>Setting</th><th>Output / period</th><th>Work in process</th><th>Cycle time</th><th>Work in process, set 20% high</th></tr></thead><tbody>' +
       rows + "</tbody></table></div>" +
-      '<p class="hint">The same line under each rule. Push and drum-buffer-rope release at the bottleneck\'s pace (' +
-      n2(Math.min.apply(null, R.means)) + ' on average, rounded); the CONWIP cap is the smallest tested cap that keeps at least 98% of push\'s output. Output is matched as closely as the rules allow; what differs is the work in process each rule needs to hold it.</p>';
+      '<p class="hint">The same line under each rule, each set to make ' + n2(R.relCmp[0].target) + ' a period: 95% of what the line passes when fed without limit. Push releases at exactly that rate, the smoothest push there is; the rope and the CONWIP cap are the smallest that reach it. The last column sets each rule 20% too high: push then releases faster than the line can work, while a pull rule only holds a few more units.</p>';
   }
+
 
   /* ---------------- live line ---------------- */
   var live = null, lvTimer = null, lvPlaying = true;
@@ -571,7 +576,7 @@
   var prevRel = "dbr";
   function syncRelParam() {
     var rel = $("rel").value;
-    var labels = { push: "Release rate (units per period)", dbr: "Protection stock in front of the bottleneck", conwip: "Work-in-process cap (units)" };
+    var labels = { push: "Release rate (units per period)", dbr: "Rope: units allowed at or before the bottleneck", conwip: "Work-in-process cap (units)" };
     $("rel-param-label").textContent = labels[rel];
     $("rel-param").value = relVals[paramKey(rel)];
   }

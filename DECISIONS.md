@@ -176,3 +176,25 @@ continue; there are no human checkpoints.)
     by a stated shift length; batch processes divide batch size by
     hours per batch; a range's midpoint is the output and a stated
     variability word overrides the range-derived cv.
+22. **Drum-buffer-rope is a true rope (changed after the study).**
+    Decision 2 released at the bottleneck's mean pace, which loads the
+    bottleneck at exactly 100% and lets its queue drift upward: on the
+    default line the "protected" bottleneck carried 20 units in process
+    at 6 periods of cycle time. The tool now uses mode `rope`: work at
+    or before the bottleneck is held at the rope length and a unit is
+    released only as the bottleneck takes one. The old mode `dbr` is
+    kept unchanged because the frozen experiment E4 used it; rerunning
+    the experiments after the change reproduces `results/experiments_raw.json`
+    and `results/timeseries.json` byte for byte. `src/linesim/simulate.py`
+    therefore no longer matches its FREEZE_MANIFEST hash (now
+    5dea46ee9f307d5e…); the change only adds the `rope` mode and fractional
+    push rates (integer rates behave exactly as before).
+23. **Release comparison at a common target, plus a wrong setting
+    (replaces 19).** Every rule is set to make 95% of what the line
+    passes fed without limit: push at exactly that rate, the rope and
+    the CONWIP cap at the smallest whole values that reach it (found by
+    bisection). Matching push's output, as decision 19 did, compared a
+    rounded push against a rope that released more. A smooth push at
+    the right rate is close to the pull rules on work in process; the
+    comparison that separates them is the same rules set 20% too high,
+    which the table now shows.

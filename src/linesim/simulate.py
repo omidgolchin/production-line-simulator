@@ -17,6 +17,15 @@ order):
       of the bottleneck station (the rope), and the bottleneck's input
       buffer starts pre-loaded with ``time_buffer`` units so the
       bottleneck is protected from upstream fluctuations (the buffer).
+    - ``rope`` (drum-buffer-rope as Goldratt defines it): release is
+      tied to the bottleneck's consumption. Units released but not yet
+      through the bottleneck (everything waiting at stations
+      1..bottleneck) are held at ``time_buffer``; each period starts
+      by releasing enough to top that segment back up. The
+      bottleneck's input buffer starts pre-loaded with the full
+      ``time_buffer``. (``dbr`` above releases at a fixed rate equal to
+      the bottleneck's mean; it is kept unchanged for the frozen
+      experiments, which used it. The tool uses ``rope``.)
     - ``conwip``: the total number of units in the line is held at
       ``wip``; a new unit is released into station 1 for every unit
       that leaves the line (stamped with the next period, the first
@@ -249,13 +258,24 @@ def simulate_counts(cfg: LineConfig, periods: int, rng,
         b = int(cfg.release["bottleneck"])
         rope_rate = cfg.stations[b].mean
         buffers[b] += int(cfg.release.get("time_buffer", 0))
+    elif mode == "rope":
+        b = int(cfg.release["bottleneck"])
+        buffers[b] += int(cfg.release.get("time_buffer", 0))
     elif mode == "conwip":
         buffers[0] += int(cfg.release["wip"])
+    push_acc = 0.0
     total_out = 0
     for t in range(1, periods + 1):
         caps = [s.draw(rng) for s in cfg.stations]
         if mode == "push":
-            buffers[0] += int(cfg.release["rate"])
+            push_acc += float(cfg.release["rate"])
+            r = int(push_acc)
+            push_acc -= r
+            buffers[0] += r
+        elif mode == "rope":
+            b = int(cfg.release["bottleneck"])
+            seg = sum(buffers[: b + 1])
+            buffers[0] += max(0, int(cfg.release.get("time_buffer", 0)) - seg)
         elif mode == "dbr":
             rope_acc += rope_rate
             r = int(rope_acc)
@@ -321,6 +341,10 @@ def simulate(cfg: LineConfig, periods: int, rng, warmup: int = 0,
         tb = int(cfg.release.get("time_buffer", 0))
         for _ in range(tb):
             buffers[b].append(0)  # pre-loaded at period 0
+    elif mode == "rope":
+        b = int(cfg.release["bottleneck"])
+        for _ in range(int(cfg.release.get("time_buffer", 0))):
+            buffers[b].append(0)
     elif mode == "conwip":
         for _ in range(int(cfg.release["wip"])):
             buffers[0].append(0)  # the line starts full: W units
@@ -347,7 +371,16 @@ def simulate(cfg: LineConfig, periods: int, rng, warmup: int = 0,
         # --- release into station 1's input buffer
         entered = 0
         if mode == "push":
-            r = int(cfg.release["rate"])
+            rope_acc += float(cfg.release["rate"])  # fractional rates
+            r = int(rope_acc)
+            rope_acc -= r
+            for _ in range(r):
+                buffers[0].append(t)
+            entered = r
+        elif mode == "rope":
+            b = int(cfg.release["bottleneck"])
+            seg = sum(len(buffers[j]) for j in range(b + 1))
+            r = max(0, int(cfg.release.get("time_buffer", 0)) - seg)
             for _ in range(r):
                 buffers[0].append(t)
             entered = r

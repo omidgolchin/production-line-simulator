@@ -122,3 +122,29 @@ def test_bottleneck_index():
                                StationSpec(kind="die")])
     assert cfg.bottleneck_index() == 1
     assert die_line().bottleneck_index() is None
+
+
+def test_rope_releases_what_the_bottleneck_consumes():
+    """Drum-buffer-rope (mode "rope"): units waiting at stations up to
+    the bottleneck stay at the rope length, so on a fixed line the
+    release matches the bottleneck exactly and work in process is
+    constant; on a variable line it stays bounded where a release at
+    the bottleneck's mean pace (mode "dbr", kept for the frozen
+    experiments) drifts upward."""
+    from linesim.simulate import StationSpec, LCG
+    fixed = lambda v: StationSpec(kind="fixed", value=v)
+    cfg = LineConfig(stations=[fixed(5), fixed(3), fixed(4)],
+                     release={"mode": "rope", "bottleneck": 1,
+                              "time_buffer": 6})
+    r = simulate(cfg, 100, LCG(1), warmup=10, record=True)
+    assert r["throughput"] == 3.0
+    assert len(set(r["series_wip"][10:])) == 1
+    stations = [StationSpec(kind="die"), StationSpec(kind="die"),
+                StationSpec(kind="uniform", lo=1, hi=4),
+                StationSpec(kind="die"), StationSpec(kind="die")]
+    rope = LineConfig(stations=stations, release={"mode": "rope", "bottleneck": 2, "time_buffer": 10})
+    pace = LineConfig(stations=stations, release={"mode": "dbr", "bottleneck": 2, "time_buffer": 10})
+    w_rope = [simulate(rope, 2000, LCG(s), warmup=200)["mean_wip"] for s in range(4)]
+    w_pace = [simulate(pace, 2000, LCG(s), warmup=200)["mean_wip"] for s in range(4)]
+    assert max(w_rope) <= 10 + 4 * 6
+    assert np.mean(w_pace) > 2 * np.mean(w_rope)
