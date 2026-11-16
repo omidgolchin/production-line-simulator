@@ -6,6 +6,9 @@
    renders results, and runs the live-line animation. */
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+  function openDetails(id) { var d = document.getElementById(id); if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView({ block: "start" }); var su = d.querySelector("summary"); if (su) su.focus(); } }
+  document.querySelectorAll("a.open-details").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDetails(a.getAttribute("href").slice(1)); }); });
+  if (location.hash === "#fit" || location.hash === "#origin") openDetails(location.hash.slice(1));
   var LS = window.Linesim, F = Tool.fmt;
   var SEED = 20261113;
 
@@ -637,6 +640,17 @@
     buffer: { st: "Saw,5,0.55,|Mill,3.6,0.2,2|Drill,5,0.25,8|Pack,5.4,0.2,8", rel: "conwip", wip: 20, plan: "" },
     down: { st: "Load,4.5,0.25,|Print,3.8,0.3,8|Unload,0,0.3,8", rel: "push", rate: 3, plan: "" }
   };
+  /* What each situation shows, for the banner. To add a situation, add an entry to EXAMPLES
+     (stations as "name,rate,variability,buffer|...") and WHY, and an <option> in index.html. */
+  var WHY = {
+    goal: "Five identical stations rolling a die (average 3.5 each). No single station is the bottleneck, yet the line makes about 3.3 a period: variability and dependence take the rest.",
+    plan: "The plan asks for 3.8 a period from a line whose welder averages 3.6. The verdict says the plan cannot be met, by how much, and what closes the gap.",
+    flood: "Work enters at 7 a period, faster than the slowest station can take it. Output does not rise; the extra work piles up in front of the bottleneck.",
+    slow: "Work enters at 3 a period, below what the line can make. The release rate, not a machine, limits output.",
+    two: "Two stations are almost equally slow. Fixing only one hands the constraint to the other.",
+    buffer: "A very uneven saw feeds the mill through room for only 2 units. The saw often finishes work it cannot pass on and the mill gets work in bursts: here the space between them, not a machine, is the constraint.",
+    down: "One station makes nothing, so the whole line stops. The tool says so instead of ranking fixes."
+  };
   var prevRel = "dbr";
   function syncRelParam() {
     var rel = $("rel").value;
@@ -921,7 +935,7 @@
   });
   $("example").addEventListener("change", function () {
     var opt = $("example").selectedOptions[0];
-    if ($("example").value && EXAMPLES[$("example").value]) Tool.exampleWatch($("inputs"), "<b>" + opt.textContent + "</b>. Type your own stations over it; the verdict updates as you type.");
+    if ($("example").value && EXAMPLES[$("example").value]) Tool.exampleWatch($("inputs"), "<b>" + opt.textContent + ".</b> " + (WHY[$("example").value] || "") + " The settings are illustrative: type your own stations over them.");
     applyExample($("example").value);
   });
   $("reps").addEventListener("change", schedule);

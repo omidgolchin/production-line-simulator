@@ -22,3 +22,4 @@ DECISIONS.md #10) $0.132; pilot v2 $0.253; main run $0.329.
 Local simulation (experiments, ground truth) costs nothing.
 
 2026-11-16: structural-variation restructure (diagram-first layout; page structure only, no engine or results changes) — $0.00 API spend.
+- 2026-11-16: guide sections (start here, situations, when to use, where it comes from) — $0.00 API spend; all work local.

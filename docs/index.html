@@ -112,6 +112,14 @@
     </div>
     <h1>Production Line Bottleneck Finder</h1>
     <p class="kit-tagline">Where your line loses output, what it can really make, and where the next dollar goes. Describe the line, or paste a log from it; the line is simulated period by period, not just averaged.</p>
+    <div class="start-here">
+      <p class="sh-q"><b>It answers:</b> which station limits your line, what the line can really make per period, and which single change would raise output most.</p>
+      <ol>
+        <li><b>Pick the situation closest to yours</b> in "Start from a common situation", or keep the four-station line already drawn.</li>
+        <li><b>Describe your line:</b> choose a station in the diagram to edit its average output, how much it varies and the space in front of it; add or remove stations; set how work enters the line. Have a log from the floor instead? Use <i>Find it from data</i>.</li>
+        <li><b>Read the verdict under the diagram</b>, then the ranked list of changes. Before you rely on it, check <a href="#fit" class="open-details">when to use this tool, and when not</a>.</li>
+      </ol>
+    </div>
   </header>
 
   <div class="tool-modes" role="tablist" aria-label="What do you want to do?">
@@ -126,8 +134,8 @@
       <form class="panel" id="inputs" novalidate onsubmit="return false">
         <div class="panel-head">
           <h2>Your line</h2>
-          <select class="example" id="example" aria-label="Load an example">
-            <option value="">Load example…</option>
+          <select class="example" id="example" aria-label="Start from a common situation">
+            <option value="">Start from a common situation…</option>
             <option value="goal">The Goal's dice game</option>
             <option value="plan">A plan the line cannot meet</option>
             <option value="flood">Releasing work too fast</option>
@@ -286,7 +294,7 @@
         <div class="panel-head">
           <h2>Your log</h2>
           <select class="example" id="d-example" aria-label="Load an example log">
-            <option value="">Load example…</option>
+            <option value="">Start from a common situation…</option>
             <option value="planted">A kiln line with one clear bottleneck</option>
             <option value="wandering">The bottleneck moves mid-log</option>
             <option value="dice">A dice-game log (outputs only)</option>
@@ -340,6 +348,35 @@
       </div>
     </details>
   </div>
+
+  <details class="more guide" id="fit">
+    <summary>When to use it, and when not <span class="sub">assumptions, limits, alternatives</span></summary>
+    <div class="more-body small">
+      <p><b>Use it</b> on a serial line (stations in a fixed order, one product or a product family with similar times) to find the constraint, to see what a plan can really get out of the line, or to compare where extra capacity, buffer space or a release rule pays most.</p>
+      <p><b>It assumes</b> the following. Each line says what happens to the answer when your case breaks the assumption.</p>
+      <table class="fit-table">
+        <thead><tr><th>Assumption</th><th>If yours differs</th></tr></thead>
+        <tbody>
+          <tr><td>One serial line: every unit visits the stations in the same order.</td><td>Parallel machines, rework loops or different routings for different products are outside this model. Treat a group of parallel machines as one station with their combined rate, as a first cut.</td></tr>
+          <tr><td>Each station's output varies around a stable average, described by one variability number (or a die roll).</td><td>Breakdowns, setups and batching enter only through the average and its spread. Long, rare breakdowns hurt more than the same average loss spread evenly, so the tool can be optimistic for them.</td></tr>
+          <tr><td>Rates stay the same over the run: no learning, no shifts with different staffing.</td><td>Model each shift pattern separately, with that shift's rates.</td></tr>
+          <tr><td>Raw material is always available at the front, and finished units always leave at the end.</td><td>If the first station waits for supplies, or the end waits for shipping space, those are stations too. Add them.</td></tr>
+          <tr><td>Time moves in discrete periods; within a period work flows into a buffer before the next station uses it.</td><td>Choose a period in which your buffer sizes make sense (an hour if buffers hold a few units, a shift if they hold dozens).</td></tr>
+          <tr><td>Data mode: the log shows idle time.</td><td>A log in which every station produced something in every period cannot separate the stations, and the tool says so.</td></tr>
+        </tbody>
+      </table>
+      <p><b>Do not use it</b> for job shops where each order follows its own route, for scheduling the sequence of orders on machines, or for lines where the bottleneck changes with the product mix (plan each product separately, or use a job-shop scheduler or a discrete-event package such as SimPy or AnyLogic).</p>
+    </div>
+  </details>
+
+  <details class="more guide" id="origin">
+    <summary>Where this tool comes from <span class="sub">the problem and data it was built on, and how it was generalised</span></summary>
+    <div class="more-body small">
+      <p>The tool comes out of a set of simulation studies on serial production lines, kept in this repository (<a href="https://github.com/omidgolchin/production-line-simulator/blob/main/results/summary.md">results/summary.md</a>), starting from the dice game in Goldratt's <i>The Goal</i>. They found:</p>
+      <ul><li><b>A balanced line still loses output.</b> Five stations rolling dice (average 3.5) deliver 3.27 per period. So the tool reports output from simulation, not from the slowest station's average.</li><li><b>Capacity pays only at the bottleneck.</b> Adding 1 at the bottleneck raised output by 0.80; adding it at the first station raised it by 0.00 and piled up 150 more units. The ranked list of changes is this experiment, run on your line.</li><li><b>Small buffers starve the line.</b> On a dice line, caps of 10, 4 and 2 units in front of each station cut output to 2.96, 2.23 and 1.55, which is why buffer space is one of the ranked changes.</li><li><b>Release rules decide the queue.</b> Push and drum-buffer-rope gave the same output, but push held 384 units in process against 19. So the release rule is an input.</li></ul>
+      <p><b>How it was generalised.</b> The studies used fixed lines. The tool takes any serial line (station rates, variability and buffer space), runs the same paired simulations to rank changes on it, and adds a mode that finds the bottleneck from a log of station states. The studies also checked whether language models can find the bottleneck; that part did not become part of the tool, and its AI fill only reads a description into the form.</p>
+    </div>
+  </details>
 
   <footer class="kit-footer">
     <p class="kit-siblings"></p>

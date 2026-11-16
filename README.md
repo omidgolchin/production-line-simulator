@@ -16,6 +16,7 @@ For anyone who runs a production line (a job shop, a cell, a small plant): enter
 - **Find it from data.** Paste or upload a log, one row per period and one column per station, cells either states (busy, starved, blocked, down) or units produced. The active-period method reads the bottleneck out of it, and the averages can be carried back into the first mode.
 - **Fill from my description.** Describe the line in plain words, or paste a shift report; a language model (your key, or copy the prompt into any assistant) fills the form, quoting the phrase each number came from. The model never computes the answer.
 - **Copy summary / Copy link.** The link carries the inputs, so a line can be shared and reopened exactly.
+- **Start here.** The page opens with the question it answers and three steps; a list of common situations fills the line; and a section says when to use the tool and when not.
 - **Help where you need it.** The analyze mode opens with a one-line guide and a legend under the diagram, and the data mode with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
@@ -55,6 +56,48 @@ For anyone who runs a production line (a job shop, a cell, a small plant): enter
 - An approximation has a territory, and the tool has to mark the border. Kingman's formula is a useful cross-check at 90% utilization and nonsense at 99.5%, and both facts belong on the page next to its number.
 - A balanced line loses real output to dependence alone. Five die stations averaging 3.5 deliver 3.27, and no single fix recovers it, because there is no single culprit; the remedies are buffers, variability and release discipline, in that order.
 - A release rule's real job is surviving a wrong setting. Set to the right output, a smooth push holds about as little work in process as the pull rules; set 20% high, its queues grow without bound while drum-buffer-rope and CONWIP add a unit or two. I first built "drum-buffer-rope" as a release rate equal to the bottleneck's pace, which is that same fragile push in disguise.
+
+## Common situations
+
+The form opens with "Start from a common situation". Each entry fills the form and says what it shows:
+
+| Situation | What it shows |
+|---|---|
+| The Goal's dice game | A balanced line: no single bottleneck, yet output falls to about 3.3 from 3.5. |
+| A plan the line cannot meet | The plan asks for 3.8 from a line whose welder averages 3.6. |
+| Releasing work too fast | Output does not rise; work piles up in front of the bottleneck. |
+| Released too slowly | The release rate, not a machine, limits output. |
+| Two stations share the blame | Fixing one alone hands the constraint to the other. |
+| A buffer that is too small | The space between two stations is the constraint. |
+| A station is down | One station makes nothing, so the line stops. |
+
+The settings are illustrative. To add a situation, add an entry to `EXAMPLES` and `WHY` in `docs/app.js` and an `<option>` in `docs/index.html`.
+
+## When to use it, and when not
+
+Use it on a serial line (stations in a fixed order, one product or a product family with similar times) to find the constraint, to see what a plan can really get out of the line, or to compare where extra capacity, buffer space or a release rule pays most.
+
+| It assumes | If yours differs |
+|---|---|
+| One serial line: every unit visits the stations in the same order. | Parallel machines, rework loops or different routings for different products are outside this model. Treat a group of parallel machines as one station with their combined rate, as a first cut. |
+| Each station's output varies around a stable average, described by one variability number (or a die roll). | Breakdowns, setups and batching enter only through the average and its spread. Long, rare breakdowns hurt more than the same average loss spread evenly, so the tool can be optimistic for them. |
+| Rates stay the same over the run: no learning, no shifts with different staffing. | Model each shift pattern separately, with that shift's rates. |
+| Raw material is always available at the front, and finished units always leave at the end. | If the first station waits for supplies, or the end waits for shipping space, those are stations too. Add them. |
+| Time moves in discrete periods; within a period work flows into a buffer before the next station uses it. | Choose a period in which your buffer sizes make sense (an hour if buffers hold a few units, a shift if they hold dozens). |
+| Data mode: the log shows idle time. | A log in which every station produced something in every period cannot separate the stations, and the tool says so. |
+
+Do not use it for job shops where each order follows its own route, for scheduling the sequence of orders on machines, or for lines where the bottleneck changes with the product mix (plan each product separately, or use a job-shop scheduler or a discrete-event package such as SimPy or AnyLogic).
+
+## Where it comes from, and how it was generalised
+
+The tool comes out of a set of simulation studies on serial production lines, kept in this repository ([results/summary.md](https://github.com/omidgolchin/production-line-simulator/blob/main/results/summary.md)), starting from the dice game in Goldratt's *The Goal*. They found:
+
+- **A balanced line still loses output.** Five stations rolling dice (average 3.5) deliver 3.27 per period. So the tool reports output from simulation, not from the slowest station's average.
+- **Capacity pays only at the bottleneck.** Adding 1 at the bottleneck raised output by 0.80; adding it at the first station raised it by 0.00 and piled up 150 more units. The ranked list of changes is this experiment, run on your line.
+- **Small buffers starve the line.** On a dice line, caps of 10, 4 and 2 units in front of each station cut output to 2.96, 2.23 and 1.55, which is why buffer space is one of the ranked changes.
+- **Release rules decide the queue.** Push and drum-buffer-rope gave the same output, but push held 384 units in process against 19. So the release rule is an input.
+
+**How it was generalised.** The studies used fixed lines. The tool takes any serial line (station rates, variability and buffer space), runs the same paired simulations to rank changes on it, and adds a mode that finds the bottleneck from a log of station states. The studies also checked whether language models can find the bottleneck; that part did not become part of the tool, and its AI fill only reads a description into the form.
 
 ## Research notes
 
