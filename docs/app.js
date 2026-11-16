@@ -847,7 +847,11 @@
     syncRelParam();
     schedule();
   });
-  $("example").addEventListener("change", function () { applyExample($("example").value); });
+  $("example").addEventListener("change", function () {
+    var opt = $("example").selectedOptions[0];
+    if ($("example").value && EXAMPLES[$("example").value]) Tool.exampleWatch($("inputs"), "<b>" + opt.textContent + "</b>. Type your own stations over it; the verdict updates as you type.");
+    applyExample($("example").value);
+  });
   $("reps").addEventListener("change", schedule);
   $("periods").addEventListener("change", schedule);
   document.querySelectorAll("[data-mode]").forEach(function (b) {
@@ -904,7 +908,11 @@
   $("log").addEventListener("input", scheduleData);
   $("d-example").addEventListener("change", function () {
     var key = $("d-example").value;
-    if (key && SAMPLES[key]) { $("log").value = SAMPLES[key]; runData(); }
+    if (key && SAMPLES[key]) {
+      $("log").value = SAMPLES[key];
+      Tool.exampleWatch($("data-inputs"), "<b>" + $("d-example").selectedOptions[0].textContent + "</b>: a constructed log. Paste or upload your own over it.");
+      runData();
+    }
   });
   $("log-file").addEventListener("change", function () {
     var f = $("log-file").files[0];
@@ -933,8 +941,13 @@
   }, 50));
 
   /* ---------------- init ---------------- */
+  // The static HTML carries the example line's verdict for visitors without
+  // JavaScript; with it, show a placeholder until this visitor's line is simulated.
+  $("v-title").textContent = "Simulating your line…";
+  $("v-body").textContent = "This takes a moment.";
   var initStations = parseStationsParam(state.st);
   if (initStations.length < 2) initStations = parseStationsParam(DEFAULT_ST);
+  if (state.st === DEFAULT_ST) Tool.exampleWatch($("inputs"), "<b>A five-station line</b> from Cut to Pack, released by drum-buffer-rope. Type your own stations over it; the verdict updates as you type.");
   renderRows(initStations);
   if (["push", "dbr", "conwip"].indexOf(state.rel) >= 0) { $("rel").value = state.rel; prevRel = state.rel; }
   else { $("rel").value = "dbr"; prevRel = "dbr"; }
@@ -943,6 +956,7 @@
   if (["12", "20", "32"].indexOf(String(state.reps)) >= 0) $("reps").value = String(state.reps);
   if (["200", "300", "500"].indexOf(String(state.periods)) >= 0) $("periods").value = String(state.periods);
   $("log").value = SAMPLES.planted;
+  Tool.exampleWatch($("data-inputs"), "<b>A kiln line with one clear bottleneck</b>, constructed for the demo. Paste or upload your own over it.");
   Tool.explain({
     period: { t: "Period", d: "Whatever time step suits your line: an hour, a shift, a day. Pick one and use it for every number on the page: output per period, planned output, and the rows of a log." },
     mean: { t: "Output per period", d: "How many units this station finishes in one period when it has work to do, on average. In The Goal's dice game, a fair die averages 3.5." },

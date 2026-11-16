@@ -145,8 +145,8 @@
 
       <section class="panel verdict" id="verdict" aria-live="polite">
         <p class="v-kicker" id="v-kicker">Bottleneck verdict</p>
-        <h3 class="v-title" id="v-title">Simulating your line…</h3>
-        <p class="v-body" id="v-body">This takes a moment. The page runs the simulation in your browser, so JavaScript must be on.</p>
+        <h3 class="v-title" id="v-title">Paint is your bottleneck.</h3>
+        <p class="v-body" id="v-body">For the example line (Cut 5.5, Weld 4.6, Paint 3.4, Assemble 4.8 and Pack 5.2 units per period, released by drum-buffer-rope): expect 3.37 units per period (3.33 to 3.40), not the 3.40 the slowest station averages on its own, because variability and dependence take the rest. Paint limited the line in 96% of simulated periods. Best next change: add capacity at Paint (+0.50 per period), for about +0.39 per period. To analyze your own line, the page runs the simulation in your browser, so JavaScript must be on.</p>
         <div class="kpis" id="v-kpis"></div>
         <div class="checks" id="v-checks"></div>
         <div class="actions">
@@ -163,7 +163,7 @@
         <div class="live-controls">
           <button type="button" class="btn small" id="lv-toggle">Pause</button>
           <label class="hint" for="lv-speed">Speed</label>
-          <select id="lv-speed">
+          <select id="lv-speed" aria-describedby="lv-speed-hint">
             <option value="1">1 period / tick</option>
             <option value="3" selected>3 periods / tick</option>
             <option value="8">8 periods / tick</option>
@@ -171,14 +171,15 @@
           <button type="button" class="btn small" id="lv-restart">Restart</button>
         </div>
       </div>
+      <p class="hint" id="lv-speed-hint" style="margin:0 0 6px">Speed sets how many periods pass per animation step. It changes the pace, not the result.</p>
       <p class="live-stats">Period <b id="lv-period">0</b> · Finished <b id="lv-out">0</b> · Waiting or in process <b id="lv-wip">0</b> units. Dots are units waiting in front of each station; the red frame marks the bottleneck from the verdict.</p>
       <div class="live-line" id="live-line"></div>
       <div class="live-fix">
         <label for="lv-station">Try a fix at</label>
-        <select id="lv-station"></select>
+        <select id="lv-station" aria-describedby="lv-fix-hint"></select>
         <button type="button" class="btn small" id="lv-addcap">+ Capacity</button>
         <button type="button" class="btn small" id="lv-addbuf">+ Buffer</button>
-        <span class="hint">The fix edits the inputs above, and the line restarts with it in place.</span>
+        <span class="hint" id="lv-fix-hint">The fix edits the inputs above, and the line restarts with it in place.</span>
       </div>
     </section>
 

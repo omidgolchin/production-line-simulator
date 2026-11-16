@@ -22,12 +22,12 @@ For anyone who runs a production line (a job shop, a cell, a small plant): enter
 
 | Check | What it does |
 |---|---|
-| Bottleneck by simulation | Scores every period by which station's own capacity was the binding limit, so the verdict follows the simulation, not the averages. When the two disagree, the panel says so. |
-| Little's law | Work in process must equal throughput times cycle time. The check compares the simulator's own counters and reports a line that never settles instead of hiding it. |
-| Kingman next to simulation | Kingman's heavy-traffic approximation of the queue in front of the bottleneck, printed next to the simulated queue, with the size and direction of its error on this line, and a warning when utilization is so high the formula explodes. |
-| Release rules compared | The same line under push, drum-buffer-rope and CONWIP, each set to make 95% of what the line can pass: the work in process each needs, and what happens when its setting is 20% too high (push's queues grow all run; a pull rule holds a few more units). |
-| Plan check | If you state a planned output, expected output is checked against it and the best change is priced against the gap. |
-| Active-period method (data mode) | The station active longest without a break is the momentary bottleneck (Roser, Nakano & Tanaka 2001). Averages are shown next to it, and the panel flags it when they point at a different station. A log with no idle time in it is called out as unreadable rather than guessed at. |
+| The bottleneck (by simulation) | Scores every period by which station's own capacity was the binding limit, so the verdict follows the simulation, not the averages. When the two disagree, the panel says so. |
+| The simulator's counters agree | Little's law: work in process must equal throughput times cycle time. The check compares the simulator's own counters and reports a line that never settles instead of hiding it. |
+| Formula next to simulation | Kingman's heavy-traffic approximation of the queue in front of the bottleneck, printed next to the simulated queue, with the size and direction of its error on this line, and a warning when utilization is so high the formula explodes. |
+| Release rules at the same output | The same line under push, drum-buffer-rope and CONWIP, each set to make 95% of what the line can pass: the work in process each needs, and what happens when its setting is 20% too high (push's queues grow all run; a pull rule holds a few more units). |
+| The plan is met / not met | If you state a planned output, expected output is checked against it and the best change is priced against the gap. |
+| Longest unbroken run wins (data mode) | The active-period method: the station active longest without a break is the momentary bottleneck (Roser, Nakano & Tanaka 2001). Averages are shown next to it, and the panel flags it when they point at a different station. A log with no idle time in it is called out as unreadable rather than guessed at. |
 
 ## Design decisions
 
