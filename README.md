@@ -2,21 +2,21 @@
 
 For anyone who runs a production line (a job shop, a cell, a small plant): enter your stations with their average output, variability and buffer space, and get the bottleneck, the output the line can really sustain, and a ranked list of the changes that would raise it. Or paste a log of station states and get the bottleneck from the data instead.
 
-![The finder on three lines (the dice game, work released too fast, two stations sharing the blame), the explanation of release rules, and the log analysis](docs/hero.gif)
+![The finder in motion: the line diagram with the bottleneck station framed and tagged, the editor open on that station, and the ranked list of changes](docs/hero.gif)
 
-![The finder on a desktop: the three-step guide, the station table, and the bottleneck verdict with its checks](docs/screenshots/desktop.png)
+![The finder on a desktop: the diagram of the line with the bottleneck station framed and tagged, the editor open on that station, and below the diagram the bottleneck verdict with its checks and the ranked list of changes](docs/screenshots/desktop.png)
 
 **Use it:** https://omidgolchin.github.io/production-line-simulator/ (runs in your browser; nothing you type leaves it)
 
 ## What it does
 
-- **Analyze my line.** A station table (average output per period, variability from steady to a die roll, buffer space in front of each station) and a release rule: push on a schedule, drum-buffer-rope (release tied to the bottleneck), or CONWIP with a cap on work in process. The verdict names the bottleneck, gives expected output with a range, and says where the next dollar goes.
+- **Analyze my line.** A diagram of the line: one box per station (average output per period, variability from steady to a die roll, buffer space in front of each station), with the bottleneck framed and tagged in the diagram; click a station to edit it. And a release rule: push on a schedule, drum-buffer-rope (release tied to the bottleneck), or CONWIP with a cap on work in process. The verdict below the diagram names the bottleneck, gives expected output with a range, and says where the next dollar goes.
 - **Watch it run.** The same line animates period by period, with work visibly piling into the buffers. Buttons add capacity or buffer at any station and restart the line with the fix in place.
 - **Ranked changes.** Every single change (more capacity at each station, more buffer where space is finite) is priced by paired simulation runs against the current line, best first, each with a 95% range.
 - **Find it from data.** Paste or upload a log, one row per period and one column per station, cells either states (busy, starved, blocked, down) or units produced. The active-period method reads the bottleneck out of it, and the averages can be carried back into the first mode.
 - **Fill from my description.** Describe the line in plain words, or paste a shift report; a language model (your key, or copy the prompt into any assistant) fills the form, quoting the phrase each number came from. The model never computes the answer.
 - **Copy summary / Copy link.** The link carries the inputs, so a line can be shared and reopened exactly.
-- **Help where you need it.** Each mode opens with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
+- **Help where you need it.** The analyze mode opens with a one-line guide and a legend under the diagram, and the data mode with three steps saying what to enter and what you get; every input has a line under it saying what the number is, why it matters and where to find it; and every technical term in the inputs and results has a **?** that opens a plain-language explanation.
 
 ## Built-in checks
 

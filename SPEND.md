@@ -20,3 +20,5 @@ usage returned with each call. All calls are recorded in
 By stage: pilot v1 (superseded by the token-budget correction,
 DECISIONS.md #10) $0.132; pilot v2 $0.253; main run $0.329.
 Local simulation (experiments, ground truth) costs nothing.
+
+2026-11-16: structural-variation restructure (diagram-first layout; page structure only, no engine or results changes) — $0.00 API spend.

@@ -85,6 +85,67 @@
     stations.forEach(function (st, i) { host.appendChild(makeRow(st, i)); });
     $("stn-count").textContent = stations.length + " stations (2 to 8). Buffer blank means no limit.";
     $("add-station").disabled = stations.length >= 8;
+    renderDiagram();
+  }
+
+  /* ---------------- diagram-first: the line as a diagram ----------------
+     The diagram is a second, clickable rendering of the same station rows
+     the editor below holds. It reads row state and the last verdict; it
+     computes nothing. Choosing a box chooses which row the editor shows. */
+  var selectedStation = 0, userPickedStation = false;
+  function varLabel(st) {
+    if (st.varSel === "die") return "die roll";
+    if (st.varSel === "custom") return "variability CV " + (st.cv === "" ? "0.3" : st.cv);
+    var o = VAR_OPTS.filter(function (x) { return x[0] === st.varSel; })[0];
+    return o ? o[1].toLowerCase() + " variability" : "";
+  }
+  function applySelection() {
+    var rows = $("stations").children;
+    if (!rows.length) return;
+    if (selectedStation >= rows.length) selectedStation = rows.length - 1;
+    if (selectedStation < 0) selectedStation = 0;
+    Array.prototype.forEach.call(rows, function (row, i) {
+      row.classList.toggle("sel", i === selectedStation);
+    });
+    var nameEl = rows[selectedStation].querySelector(".stn-name");
+    $("editor-name").textContent = nameEl && nameEl.value.trim() ? nameEl.value.trim() : "Station " + (selectedStation + 1);
+    Array.prototype.forEach.call($("diagram").children, function (el) {
+      if (!el.classList.contains("dg-box")) return;
+      var on = Number(el.getAttribute("data-i")) === selectedStation;
+      el.classList.toggle("sel", on);
+      if (on) el.setAttribute("aria-current", "true"); else el.removeAttribute("aria-current");
+    });
+  }
+  function renderDiagram() {
+    var host = $("diagram");
+    if (!host) return;
+    var sts = collectRows();
+    var bn = lastResult && lastResult.v ? lastResult.v.bottleneck : -1;
+    host.innerHTML = "";
+    sts.forEach(function (st, i) {
+      if (i > 0) {
+        var conn = document.createElement("div");
+        conn.className = "dg-conn";
+        var buf = st.buf === "" ? null : Number(st.buf);
+        var pct = buf === null || !isFinite(buf) ? 100 : Math.max(8, Math.min(buf, 24) / 24 * 100);
+        conn.innerHTML = '<span class="dg-arrow" aria-hidden="true">→</span>' +
+          '<span class="dg-bufbar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>' +
+          '<span class="dg-buflab">' + (buf === null ? "buffer: no limit" : "buffer: " + esc(st.buf)) + "</span>";
+        host.appendChild(conn);
+      }
+      var nm = st.name.trim() || ("Station " + (i + 1));
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "dg-box" + (i === bn ? " is-bn" : "") + (i === selectedStation ? " sel" : "");
+      b.setAttribute("data-i", String(i));
+      if (i === selectedStation) b.setAttribute("aria-current", "true");
+      b.setAttribute("aria-label", "Edit station " + nm + (i === bn ? ", bottleneck" : ""));
+      b.innerHTML = (i === bn ? '<span class="dg-tag">Bottleneck</span>' : "") +
+        '<span class="dg-name">' + esc(nm) + "</span>" +
+        '<span class="dg-sub">avg ' + esc(st.mean === "" ? "—" : st.mean) + " / period · " + esc(varLabel(st)) + "</span>";
+      host.appendChild(b);
+    });
+    applySelection();
   }
   function collectRows() {
     return Array.prototype.map.call($("stations").children, function (row, i) {
@@ -201,6 +262,7 @@
     $("full-numbers").innerHTML = "";
     $("release-numbers").innerHTML = "";
     $("live-line").innerHTML = "";
+    renderDiagram();
   }
 
   function compute() {
@@ -239,6 +301,8 @@
     renderFullNumbers(R);
     renderReleaseTable(R);
     buildLive(R);
+    if (!userPickedStation) selectedStation = R.v.bottleneck;
+    renderDiagram();
     writeUrl();
   }
 
@@ -824,6 +888,14 @@
       row.querySelector(".stn-cv").hidden = e.target.value !== "custom";
     }
   });
+  $("diagram").addEventListener("click", function (e) {
+    var b = e.target.closest(".dg-box");
+    if (!b) return;
+    selectedStation = Number(b.getAttribute("data-i"));
+    userPickedStation = true;
+    applySelection();
+  });
+  $("goto-data").addEventListener("click", function () { setMode("data"); });
   $("stations").addEventListener("click", function (e) {
     if (!e.target.classList.contains("stn-del")) return;
     var rows = collectRows();

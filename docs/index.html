@@ -54,6 +54,40 @@
   .lv-name { font-weight:700; font-size:14px; }
   .lv-sub { font-size:12px; color:var(--muted); }
   .lv-arrow { align-self:center; color:var(--muted); font-size:18px; padding-bottom:26px; }
+  /* Diagram-first layout (this tool's own structure): the line is a row of
+     station boxes with buffer connectors; the editor below shows one
+     station at a time; the analyze column stacks panel under panel. */
+  .mode-intro { font-size:var(--fs-small); color:var(--muted); margin:var(--sp-3) 0 0; max-width:72ch; }
+  .mode-intro b { color:var(--fg); font-weight:600; }
+  .work-stack { grid-template-columns:minmax(0,1fr); gap:var(--sp-3); }
+  .dg-line { display:flex; align-items:stretch; overflow-x:auto; padding:12px 2px 4px; }
+  .dg-box { flex:1 1 0; min-width:104px; text-align:left; border:2px solid var(--border); border-radius:10px; background:var(--sunken); padding:8px 10px; cursor:pointer; font:inherit; color:var(--fg); position:relative; }
+  .dg-box:hover { border-color:var(--accent); }
+  .dg-box.sel { border-color:var(--accent); background:var(--accent-soft); }
+  .dg-box.is-bn { border-color:var(--bad); }
+  .dg-box.is-bn.sel { background:var(--accent-soft); }
+  .dg-name { display:block; font-weight:700; font-size:15px; }
+  .dg-sub { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .dg-tag { position:absolute; top:-9px; right:8px; background:var(--bad); color:#fff; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1px 6px; border-radius:2px; }
+  .dg-conn { flex:0 0 62px; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:0 4px; }
+  .dg-arrow { text-align:center; color:var(--muted); font-size:15px; line-height:1; }
+  .dg-bufbar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .dg-bufbar i { display:block; height:100%; background:var(--series-2); }
+  .dg-buflab { font-size:11px; color:var(--muted); text-align:center; white-space:nowrap; }
+  @media (max-width:600px) {
+    .dg-line { flex-wrap:wrap; gap:8px; overflow-x:visible; }
+    .dg-box { flex:1 1 42%; }
+    .dg-conn { flex:1 1 100%; padding:0 2px; }
+    .dg-arrow { display:none; }
+  }
+  .dg-legend { display:flex; flex-wrap:wrap; gap:4px 18px; font-size:var(--fs-caption); color:var(--muted); margin:8px 0 2px; }
+  .dg-legend .sw { display:inline-block; width:14px; height:10px; border:2px solid var(--border); border-radius:3px; vertical-align:-1px; margin-right:5px; background:var(--sunken); }
+  .dg-legend .sw-bn { border-color:var(--bad); }
+  .dg-legend .sw-sel { border-color:var(--accent); background:var(--accent-soft); }
+  .dg-legend .sw-bar { border:none; height:6px; background:var(--series-2); vertical-align:2px; }
+  .editor-title { font-weight:600; margin:14px 0 2px; }
+  #stations .stn-row { display:none; }
+  #stations .stn-row.sel { display:grid; }
   .live-fix { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; border-top:1px solid var(--border); padding-top:12px; }
   .live-fix select { font:inherit; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--fg); }
   @media (max-width:600px) {
@@ -87,15 +121,8 @@
 
   <!-- ================= Analyze my line ================= -->
   <div id="view-analyze" role="tabpanel" aria-labelledby="tab-analyze">
-    <div class="guide" aria-label="How to use this mode">
-      <ol class="steps">
-        <li><b>List your stations in order</b>, with what each makes per period on average, how much that varies, and the space in front of it. A period is any time step you choose (an hour, a shift, a day) <button type="button" data-tip="period"></button>; use the same one throughout.</li>
-        <li><b>Say how work enters the line</b>: on a schedule, tied to the bottleneck, or capped in total.</li>
-        <li><b>Read the verdict</b>: which station limits output, what the line can really make, and which single change pays most. <i>Watch it run</i> shows the queues form.</li>
-      </ol>
-      <p class="also"><b>Also here:</b> <i>Find it from data</i> finds the bottleneck in a log from your floor · <i>Try a fix</i> applies a change and reruns · <i>Release rules compared</i> prices push, drum-buffer-rope and CONWIP on your line.</p>
-    </div>
-    <section class="work">
+    <p class="mode-intro"><b>Your line is the diagram.</b> Choose any station in it to edit that station below, and set how work enters the line; the verdict under the diagram updates as you type. A period is any time step you choose (an hour, a shift, a day) <button type="button" data-tip="period"></button>; use the same one throughout. Got a log from the floor instead? <button type="button" class="linkish" id="goto-data">Find it from data</button> reads the bottleneck out of it.</p>
+    <section class="work work-stack">
       <form class="panel" id="inputs" novalidate onsubmit="return false">
         <div class="panel-head">
           <h2>Your line</h2>
@@ -110,6 +137,13 @@
             <option value="down">A station is down</option>
           </select>
         </div>
+        <div class="dg-line" id="diagram" role="group" aria-label="Diagram of your line. Choose a station to edit it below."></div>
+        <p class="dg-legend" aria-label="How to read the diagram">
+          <span><span class="sw sw-bn"></span>Red frame and tag: the bottleneck from the verdict</span>
+          <span><span class="sw sw-sel"></span>Blue frame: the station you are editing</span>
+          <span><span class="sw sw-bar"></span>Bar between stations: buffer spaces in front of the next station (longer = more room; no limit = full bar)</span>
+        </p>
+        <p class="editor-title">Editing: <span id="editor-name">Cut</span></p>
         <div class="stn-head"><span>Station</span><span>Output <button type="button" data-tip="mean"></button></span><span>Variability <button type="button" data-tip="cv"></button></span><span>Buffer <button type="button" data-tip="buf"></button></span><span></span></div>
         <div id="stations"></div>
         <div class="stn-actions">
