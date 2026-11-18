@@ -6,6 +6,10 @@
    renders results, and runs the live-line animation. */
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+  /* Live regions (the verdict title) are written only when their text
+   * changes, so a screen reader does not announce an unchanged verdict
+   * again after every pause in typing. */
+  var setLive = function (el, s) { s = String(s); if (el.textContent !== s) el.textContent = s; };
   function openDetails(id) { var d = document.getElementById(id); if (d && d.tagName === "DETAILS") { d.open = true; d.scrollIntoView({ block: "start" }); var su = d.querySelector("summary"); if (su) su.focus(); } }
   document.querySelectorAll("a.open-details").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); openDetails(a.getAttribute("href").slice(1)); }); });
   if (location.hash === "#fit" || location.hash === "#origin") openDetails(location.hash.slice(1));
@@ -256,7 +260,7 @@
     stopLive();
     lastResult = null;
     $("verdict").className = "panel verdict v-neutral";
-    $("v-title").textContent = "Check the highlighted inputs";
+    setLive($("v-title"), "Check the highlighted inputs");
     $("v-body").textContent = "";
     $("v-kpis").innerHTML = "";
     $("v-checks").innerHTML = "";
@@ -469,7 +473,7 @@
     var copy = verdictCopy(R);
     var agg = R.agg, v = R.v;
     $("verdict").className = "panel verdict v-" + v.state;
-    $("v-title").textContent = copy.title;
+    setLive($("v-title"), copy.title);
     $("v-body").textContent = copy.body;
     var kpis;
     if (v.reason === "buffer") {
@@ -684,7 +688,7 @@
   function showDataInvalid(msg) {
     lastData = null;
     $("d-verdict").className = "panel verdict v-neutral";
-    $("dv-title").textContent = msg || "Check the log";
+    setLive($("dv-title"), msg || "Check the log");
     $("dv-body").textContent = "";
     $("dv-kpis").innerHTML = "";
     $("dv-checks").innerHTML = "";
@@ -730,7 +734,7 @@
     }
     lastData = { a: a, v: v };
     $("d-verdict").className = "panel verdict v-" + v.state;
-    $("dv-title").textContent = title;
+    setLive($("dv-title"), title);
     $("dv-body").textContent = body;
     var kpis = [
       [pct0(a.bottleneck_share[top]), "of periods " + B + " is the bottleneck"],
@@ -1029,7 +1033,7 @@
   /* ---------------- init ---------------- */
   // The static HTML carries the example line's verdict for visitors without
   // JavaScript; with it, show a placeholder until this visitor's line is simulated.
-  $("v-title").textContent = "Simulating your line…";
+  setLive($("v-title"), "Simulating your line…");
   $("v-body").textContent = "This takes a moment.";
   var initStations = parseStationsParam(state.st);
   if (initStations.length < 2) initStations = parseStationsParam(DEFAULT_ST);

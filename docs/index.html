@@ -185,9 +185,9 @@
         <div id="assistMount"></div>
       </form>
 
-      <section class="panel verdict" id="verdict" aria-live="polite">
+      <section class="panel verdict" id="verdict">
         <p class="v-kicker" id="v-kicker">Bottleneck verdict</p>
-        <h3 class="v-title" id="v-title">Paint is your bottleneck.</h3>
+        <h3 class="v-title" id="v-title" aria-live="polite" aria-atomic="true">Paint is your bottleneck.</h3>
         <p class="v-body" id="v-body">For the example line (Cut 5.5, Weld 4.6, Paint 3.4, Assemble 4.8 and Pack 5.2 units per period, released by drum-buffer-rope): expect 3.37 units per period (3.33 to 3.40), not the 3.40 the slowest station averages on its own, because variability and dependence take the rest. Paint limited the line in 96% of simulated periods. Best next change: add capacity at Paint (+0.50 per period), for about +0.39 per period. To analyze your own line, the page runs the simulation in your browser, so JavaScript must be on.</p>
         <div class="kpis" id="v-kpis"></div>
         <div class="checks" id="v-checks"></div>
@@ -312,9 +312,9 @@
         <p id="d-form-error" class="form-error" role="alert" hidden></p>
       </form>
 
-      <section class="panel verdict" id="d-verdict" aria-live="polite">
+      <section class="panel verdict" id="d-verdict">
         <p class="v-kicker">Bottleneck from your log</p>
-        <h3 class="v-title" id="dv-title">Reading your log…</h3>
+        <h3 class="v-title" id="dv-title" aria-live="polite" aria-atomic="true">Reading your log…</h3>
         <p class="v-body" id="dv-body">The page analyzes the log in your browser, so JavaScript must be on.</p>
         <div class="kpis" id="dv-kpis"></div>
         <div class="checks" id="dv-checks"></div>
