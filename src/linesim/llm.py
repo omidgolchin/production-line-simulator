@@ -3,9 +3,9 @@
 Design rules, shared with the other projects in this portfolio:
 
 * The API key comes from the environment variable TOGETHER_API_KEY.
-  Inside Muse, a credential surrogate for the connected Together
-  account is used instead: the surrogate is not the real key; Muse's
-  egress layer swaps in the real key for api.together.xyz. The key is
+  Where a credential helper is configured (CREDENTIAL_HELPER_DIR),
+  it can supply a surrogate key instead, which that environment's proxy
+  exchanges for the real key. The key is
   never printed or logged.
 * Runs are resumable: a run's ID is (model, config, mode); IDs already
   in the output file are skipped.
@@ -50,7 +50,9 @@ def _api_key() -> str:
     key = os.environ.get("TOGETHER_API_KEY")
     if key:
         return key
-    bin_dir = "/opt/muse/skills/custom-connector-setup/bin"
+    bin_dir = os.environ.get("CREDENTIAL_HELPER_DIR", "")
+    if not bin_dir:
+        raise RuntimeError("Set TOGETHER_API_KEY.")
     if bin_dir not in sys.path:
         sys.path.insert(0, bin_dir)
     from dynamic_credentials import dynamic_credential_entry
